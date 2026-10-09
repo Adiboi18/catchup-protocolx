@@ -29,7 +29,9 @@ Brave control became unavailable during the next batch of checks. Privacy-dialog
 
 The earlier production release returned HTTP 200 without login, and all seven assets in that release matched local source bytes. Sample processing, personal filtering, task completion, source navigation and FLAN-T5 generation were tested on that earlier release. Its generated summary omitted important facts, which motivated the current improvements.
 
-The current release adds `brief.js` and `summary-quality.js`. Publication must be checked against all nine app assets with anonymous requests and byte comparison. GitHub integration is not connected; a separate direct Vercel deployment is required after source pushes.
+The current release adds `brief.js` and `summary-quality.js`. Production deployment `dpl_GAudypmEwdk4CXwDXsELUvCNh2Ei` reached **READY** and was aliased to `https://catchup-protocolx.vercel.app`. Anonymous HTTP checks returned 200 for all nine app assets, and each SHA-256 matched the tested local source. The pushed app commit is `3c6c1792433009e28057ba4cf93d0d3b873d6979`; the remote main branch matched it during verification. Current production browser interaction was unavailable, so the feature checks above are local-browser checks plus matching deployed files.
+
+GitHub integration is not connected; a separate direct Vercel deployment is required after app-source pushes. This later verification-note update changes documentation only.
 
 ## Remaining limits
 
