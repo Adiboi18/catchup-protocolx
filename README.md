@@ -8,15 +8,16 @@ Open the [live CatchUp demo](https://catchup-protocolx.vercel.app). The source r
 
 1. Open the app and select **Try a sample chat**, or paste a chat / upload a plain-text export.
 2. Enter your name and optionally choose the first unread message.
-3. Select **Catch me up**. Read the extractive brief and source-backed findings.
-4. Use **For you**, **Decisions**, **Deadlines**, **Tasks**, or **Needs attention** to filter.
+3. Select **Catch me up**. Read your source-backed brief, with personal mentions first and the broader conversation underneath.
+4. Expand **Explore tasks, decisions & deadlines** to use the **For you**, **Decisions**, **Deadlines**, **Tasks**, or **Needs attention** filters.
 5. Mark a task complete. Optionally enable **Remember this chat on this device**.
-6. Select **Use local AI** for an experimental generative overview alongside the source-backed brief. First use downloads approximately 95 MB of model weights, plus runtime files. No chat text is sent to an AI API.
+6. Expand **Optional AI overview** and select **Try local AI** for an experimental generative overview. First use downloads approximately 95 MB of model weights, plus runtime files. Unusable output is hidden while the source-backed brief stays available. No chat text is sent to an AI API.
 
 ## Features
 
 - Plain-text paste and WhatsApp-style Android/iOS `.txt` exports; realistic fictional sample input.
-- Extractive overview covering decisions, important updates and priority items.
+- Concise source-backed overview covering decisions, important updates, explicitly urgent requests and recent tasks. Long announcements are abridged, with original evidence one click away.
+- Personal greeting and catch-up title using the entered name; matching mentions appear in a dedicated **For you** section. Completing a task updates both the brief and task counts.
 - Local keyword topic hints, clearly distinct from generative topic understanding.
 - Task owners where explicitly identifiable; otherwise **Not specified / not confirmed**.
 - Explicit deadlines, configurable current date/time and day-first/month-first date interpretation.
@@ -51,7 +52,7 @@ The stack is deliberately small: HTML, CSS, native JavaScript modules, a service
 
 Priority score: stated urgency **+7**, direct mention **+5**, stated deadline/time **+3**, request/commitment **+2**, decision/change **+2**, explicit importance **+1**, confirmed overdue deadline **+6**, confirmed deadline today/within 24 hours **+2**, only tentative date interpretations **−2**. Higher scores appear first; ties use source order. These are engineering heuristics, not learned priority probabilities.
 
-The optional worker runs [`Xenova/flan-t5-small`](https://huggingface.co/Xenova/flan-t5-small), an ONNX conversion of Google's FLAN-T5 Small, through pinned `@huggingface/transformers@4.2.0`, using quantized q8 weights and CPU/WASM. Inputs are divided into 250-word sections and processed locally. Generative summaries may omit details or make mistakes; original evidence remains available.
+The optional worker runs [`Xenova/flan-t5-small`](https://huggingface.co/Xenova/flan-t5-small), an ONNX conversion of Google's FLAN-T5 Small, through pinned `@huggingface/transformers@4.2.0`, using quantized q8 weights and CPU/WASM. Inputs are divided into 250-word sections and processed locally. A heuristic gate rejects repetitive or poorly grounded output; if a section fails, the entire AI overview is hidden. This is not factual verification: accepted summaries can still omit details or make mistakes. The source-backed brief remains available and is never relabelled as generated AI.
 
 All readable messages are considered up to a 6,000-word AI budget. For longer conversations, important messages are selected first and the UI reports how many messages were covered. The extraction engine still examines the entire accepted input.
 

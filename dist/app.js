@@ -1,4 +1,5 @@
 import { SAMPLE_CHAT, parseChat, analyzeChat, buildAIInput, exportBrief } from './engine.js';
+import { buildBrief, cleanBriefTakeaway } from './brief.js';
 const $ = (id) => document.getElementById(id);
 const labels = {
   action: 'Task',
@@ -64,7 +65,15 @@ function toast(text) {
 function updateCount() {
   $('input-count').textContent = `${parseChat($('chat-input').value).length} messages`;
 }
+function personalize() {
+  const name = $('your-name').value.trim();
+  $('greeting').textContent = name
+    ? `A little clarity for you, ${name}.`
+    : 'Your conversation, made clear.';
+  $('results-title').textContent = name ? `${name}’s catch-up` : 'Your catch-up';
+}
 function invalidate() {
+  personalize();
   $('import-coverage').hidden = true;
   aiBusy = false;
   requestId++;
@@ -97,31 +106,115 @@ function showSource(id) {
     source.focus({ preventScroll: true });
   }
 }
+function formatHighlights(text) {
+  const safe = String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return safe
+    .replace(/\b(\d{1,2}(?:[:.]\d{2})?\s*(?:AM|PM|am|pm))\b/g, '<mark>$1</mark>')
+    .replace(
+      /\b(\d{1,2}(?:st|nd|rd|th)?\s+(?:January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)(?:\s+\d{4})?)\b/gi,
+      '<mark>$1</mark>',
+    )
+    .replace(
+      /\b(closes(?:\s+at)?|due(?:\s+date)?|deadline|mandatory|urgent|approved|decided|today|tomorrow)\b/gi,
+      '<strong>$1</strong>',
+    );
+}
+
 function renderSummary() {
   const root = $('summary-text');
   root.replaceChildren();
+
+  // 1. On-device AI Overview (clean, formatted card)
   if (aiSummary) {
-    root.append(
-      el('h4', '', 'Experimental AI overview'),
-      el('p', '', aiSummary),
-      el('h4', '', 'Key facts from the conversation'),
+    const aiBox = el('div', 'ai-overview-box');
+    const header = el('div', 'ai-overview-header');
+    header.append(
+      el('span', 'ai-sparkle', '✦'),
+      el('span', '', 'AI overview · verify with sources'),
     );
+    aiBox.append(header);
+
+    const paragraphs = aiSummary.split(/\n+/).filter(Boolean);
+    for (const p of paragraphs) {
+      const point = el('div', 'ai-overview-point');
+      point.innerHTML = formatHighlights(p);
+      aiBox.append(point);
+    }
+    root.append(aiBox);
   }
+
   if (!digest.summaryMessages.length) {
     root.append(el('p', '', 'There is no readable message content in this selection.'));
     return;
   }
-  const list = el('ul');
-  for (const message of digest.summaryMessages) {
-    const li = el('li');
-    const button = el('button', '', `${message.sender}: ${message.text}`);
-    button.title = `Read source message #${message.id}`;
-    button.addEventListener('click', () => showSource(message.id));
-    li.append(button);
-    list.append(li);
+
+  const brief = buildBrief(digest, completed);
+  for (const [heading, entries] of [
+    ['For you', brief.personal],
+    ['What you need to know', brief.overview],
+    ['Other follow-ups', brief.nextSteps],
+  ]) {
+    if (!entries.length) continue;
+    const section = el(
+      'section',
+      heading === 'For you' ? 'brief-section personal-section' : 'brief-section',
+    );
+    section.append(el('h4', 'summary-section-title', heading));
+    const container = el('div', 'brief-items-list');
+    for (const message of entries) {
+      const item = el('div', 'brief-item');
+
+      const findingMatch = digest.findings.find((f) => f.id === message.id);
+      const explicitUrgency = findingMatch?.reasons.includes('Urgency stated in message');
+      const pastDeadline = findingMatch?.deadlineDetails.some(
+        (d) => d.status === 'overdue' && !d.uncertain,
+      );
+      const tag = findingMatch
+        ? explicitUrgency
+          ? 'urgent'
+          : pastDeadline
+            ? 'deadline'
+            : findingMatch.tags[0] || 'update'
+        : 'update';
+      const tagLabel = explicitUrgency
+        ? 'Urgent'
+        : pastDeadline
+          ? 'Past deadline'
+          : tag === 'decision'
+            ? 'Decision'
+            : tag === 'deadline'
+              ? 'Deadline'
+              : tag === 'action'
+                ? 'Task'
+                : 'Update';
+
+      const badge = el('span', `brief-category-badge ${tag}`, tagLabel);
+
+      const content = el('div', 'brief-content');
+      content.innerHTML = formatHighlights(message.excerpt);
+
+      const sourceBtn = el('button', 'brief-source-pill', `#${message.id} ↗`);
+      sourceBtn.title = `Jump to original message #${message.id}`;
+      sourceBtn.setAttribute('aria-label', `Read source message #${message.id}`);
+      sourceBtn.type = 'button';
+      sourceBtn.addEventListener('click', () => showSource(message.id));
+
+      item.append(badge, content, sourceBtn);
+      container.append(item);
+    }
+    section.append(container);
+    root.append(section);
   }
-  root.append(list);
+  if (digest.name && !brief.personal.length)
+    root.append(
+      el(
+        'p',
+        'field-help',
+        'No open messages mention your name in this selection. General instructions above may still apply to you.',
+      ),
+    );
 }
+
 function renderFindings() {
   const root = $('findings-list');
   root.replaceChildren();
@@ -134,14 +227,30 @@ function renderFindings() {
   );
   $('no-findings').hidden = items.length > 0;
   for (const item of items) {
+    const primaryTag = item.priority === 'high' ? 'urgent' : item.tags[0] || 'update';
     const card = el(
       'article',
-      `finding ${item.priority}${completed.has(item.id) ? ' completed' : ''}`,
+      `finding ${primaryTag} ${item.priority}${completed.has(item.id) ? ' completed' : ''}`,
     );
+    const tabColor =
+      primaryTag === 'urgent'
+        ? 'tab-pink'
+        : primaryTag === 'decision'
+          ? 'tab-green'
+          : primaryTag === 'action'
+            ? 'tab-yellow'
+            : primaryTag === 'deadline'
+              ? 'tab-cyan'
+              : primaryTag === 'mention'
+                ? 'tab-purple'
+                : 'tab-grey';
+    const folderTab = el('div', `folder-tab ${tabColor}`);
+    card.append(folderTab);
+
     const symbol = el(
       'div',
       'finding-symbol',
-      item.priority === 'high' ? '!' : symbols[item.tags[0]],
+      item.priority === 'high' ? '!' : symbols[item.tags[0]] || '✓',
     );
     symbol.setAttribute('aria-hidden', 'true');
     const body = el('div', 'finding-body');
@@ -159,7 +268,13 @@ function renderFindings() {
     );
     priority.title = item.reasons.join(' · ') || 'Decision or important update';
     top.append(tags, priority);
-    body.append(top, el('p', '', item.text));
+
+    // High-impact bold Takeaway
+    const takeaway = cleanBriefTakeaway(item.text);
+    const takeawayEl = el('div', 'finding-takeaway');
+    takeawayEl.innerHTML = formatHighlights(takeaway);
+
+    body.append(top, takeawayEl);
     if (item.owner)
       body.append(
         el(
@@ -208,6 +323,7 @@ function renderFindings() {
         persist();
         renderStats();
         renderFindings();
+        renderSummary();
       });
       label.append(checkbox, el('span', '', checkbox.checked ? 'Completed' : 'Mark completed'));
       body.append(label);
@@ -284,7 +400,6 @@ function analyze() {
   requestId++;
   aiSummary = '';
   filter = 'all';
-  const start = performance.now();
   const key = chatKey($('chat-input').value);
   if (completionChat !== key) {
     completed = new Set();
@@ -300,17 +415,16 @@ function analyze() {
     dateFormat: $('date-format').value,
   });
   $('empty-state').hidden = true;
+  personalize();
   $('results').hidden = false;
   $('export-button').disabled = false;
   $('digest-info').textContent =
     `${digest.messages.length} messages · ~${digest.readMinutes} min of reading`;
-  $('processing-time').textContent =
-    `${Math.max(1, Math.round(performance.now() - start))} ms · on-device`;
+  $('processing-time').textContent = 'On your device';
   renderStats();
-  $('topic-list').replaceChildren(...digest.topics.map((topic) => el('span', '', topic)));
-  $('summary-mode').textContent = 'Extractive brief';
+  $('summary-mode').textContent = 'Source-backed';
   $('ai-status').textContent = 'Runs locally. First use downloads the model.';
-  $('ai-button').textContent = 'Use local AI ✦';
+  $('ai-button').textContent = 'Try local AI';
   $('ai-button').disabled = false;
   $('ai-progress').hidden = true;
   document.querySelectorAll('.filter').forEach((button) => {
@@ -369,7 +483,19 @@ function startAI() {
         $('ai-button').textContent = 'Summarize again';
         $('ai-progress').hidden = true;
         renderSummary();
-        toast('Local AI summary ready.');
+        toast('Local AI overview ready. Please verify the source facts.');
+      }
+      if (data.type === 'quality-failure') {
+        aiBusy = false;
+        aiSummary = '';
+        $('summary-mode').textContent = 'Source-backed';
+        $('ai-status').textContent =
+          'The model did not produce a usable overview. Your source-backed brief is ready above.';
+        $('ai-button').disabled = false;
+        $('ai-button').textContent = 'Retry local AI';
+        $('ai-progress').hidden = true;
+        renderSummary();
+        toast('Kept your source-backed brief. Unusable AI output was hidden.');
       }
       if (data.type === 'error') aiFailed(data.message);
     };
@@ -471,13 +597,24 @@ $('chat-input').addEventListener('input', () => {
   persist();
 });
 $('your-name').addEventListener('input', invalidate);
+$('clear-button').addEventListener('click', () => {
+  $('chat-input').value = '';
+  $('unread-from').value = '1';
+  completed = new Set();
+  completionChat = '';
+  invalidate();
+  updateCount();
+  persist();
+  $('chat-input').focus();
+});
 $('unread-from').addEventListener('input', invalidate);
 $('demo-button').addEventListener('click', () => {
   invalidate();
-  $('chat-input').value = SAMPLE_CHAT;
-  $('your-name').value = 'Adyan';
+  if (!$('your-name').value.trim()) $('your-name').value = 'Adyan';
+  $('chat-input').value = SAMPLE_CHAT.replaceAll('@Adyan', `@${$('your-name').value.trim()}`);
   $('unread-from').value = '1';
   updateCount();
+  personalize();
   analyze();
   toast('Sample chat loaded. Try “For you” to see your tasks.');
 });
@@ -507,15 +644,18 @@ $('chat-file').addEventListener('change', async (event) => {
   }
   event.target.value = '';
 });
+function syncFilterUI(newFilter) {
+  filter = newFilter;
+  document.querySelectorAll('.filter').forEach((item) => {
+    const selected = item.dataset.filter === filter;
+    item.classList.toggle('active', selected);
+    item.setAttribute('aria-pressed', String(selected));
+  });
+}
 document.querySelectorAll('.filter').forEach((button) =>
   button.addEventListener('click', () => {
     if (!digest) return;
-    filter = button.dataset.filter;
-    document.querySelectorAll('.filter').forEach((item) => {
-      const selected = item === button;
-      item.classList.toggle('active', selected);
-      item.setAttribute('aria-pressed', String(selected));
-    });
+    syncFilterUI(button.dataset.filter);
     renderFindings();
   }),
 );
@@ -627,3 +767,4 @@ if (document.modelContext?.registerTool) {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
 updateCount();
+personalize();

@@ -20,6 +20,73 @@ test('reads WhatsApp Android and iOS exports, keeping multiline message content'
   assert.equal(messages[0].text, 'Agenda:\nBring a charger');
   assert.equal(messages[1].sender, 'Arun');
 });
+
+test('timestamped exports keep announcement labels and Markdown links in their original message', () => {
+  const chat = `[07/10/2026, 11:45:00 AM] Mira: *Forwarded*
+*Innovation Week*
+Date: 15–16 October 2026
+Registration closes: 15 October 2026
+Venue: Science auditorium
+[Register Here](https://example.test/register)
+https://example.test/details
+Bring your college ID.
+[07/10/2026, 11:46:00 AM] Dev: Thanks for sharing.
+[07/10/2026, 11:48:00 AM] Leela: Can someone check the projector? This is urgent.`;
+  const digest = analyzeChat(chat, '', 1, OPTIONS);
+  assert.equal(digest.messages.length, 3);
+  assert.deepEqual(
+    digest.messages.map((message) => message.sender),
+    ['Mira', 'Dev', 'Leela'],
+  );
+  assert.ok(digest.messages[0].text.includes('Venue: Science auditorium'));
+  assert.ok(digest.messages[0].text.includes('[Register Here](https://example.test/register)'));
+  assert.ok(digest.messages[0].text.includes('Bring your college ID.'));
+  const announcement = digest.findings.find((message) => message.id === 1);
+  assert.ok(announcement.tags.includes('update'));
+  assert.ok(
+    announcement.deadlines.includes('Registration closes: 15 October 2026') ||
+      announcement.deadlines.includes('closes: 15 October 2026'),
+  );
+  assert.equal(
+    announcement.deadlineDetails.find((deadline) => deadline.label.includes('closes')).dateISO,
+    '2026-10-15',
+  );
+  assert.equal(
+    announcement.deadlineDetails.find((deadline) => deadline.label.includes('15–16')).uncertain,
+    true,
+  );
+  assert.ok(digest.summaryMessages.some((message) => message.id === 1));
+  assert.ok(digest.summaryMessages.some((message) => message.id === 3));
+  const model = buildAIInput(digest);
+  assert.ok(model.text.includes('Venue: Science auditorium'));
+  assert.ok(model.text.includes('15 October 2026'));
+  assert.ok(!model.text.includes('https://'));
+  assert.ok(!model.text.includes('*'));
+  assert.ok(!model.text.includes('Forwarded'));
+  assert.ok(!model.text.includes('Message:'));
+  // Model-only cleanup never alters source evidence or the exported brief.
+  assert.ok(exportBrief(digest).includes('[Register Here](https://example.test/register)'));
+});
+
+test('captures each scheduled dot-time and preserves ambiguous next-class deadlines', () => {
+  const chat = `[09/10/2026, 09:00] Mira: Tomorrow the briefing is at 8.30 am and the lab session starts at 9.25 am.
+[09/10/2026, 09:05] Dev: Please submit the worksheet before next class.`;
+  const digest = analyzeChat(chat, '', 1, OPTIONS);
+  const schedule = digest.findings.find((message) => message.id === 1);
+  assert.deepEqual(schedule.deadlines, ['8.30 am', 'starts at 9.25 am']);
+  assert.ok(
+    schedule.deadlineDetails.every(
+      (deadline) => deadline.dateISO === '2026-10-10' && !deadline.uncertain,
+    ),
+  );
+  const task = digest.findings.find((message) => message.id === 2);
+  assert.ok(task.deadlines.includes('before next class'));
+  assert.equal(task.deadlineDetails[0].status, 'unknown');
+  assert.equal(task.deadlineDetails[0].uncertain, true);
+  assert.deepEqual(extractDeadlines('Submit on or before 01 October 2026.'), [
+    'on or before 01 October 2026',
+  ]);
+});
 test('matches names without matching substrings or interpreting regex characters', () => {
   assert.equal(mentionsName('Annual meeting', 'Ann'), false);
   assert.equal(mentionsName('@Ann please reply', 'Ann'), true);
@@ -131,4 +198,31 @@ Ishaan: Meet you after lunch.`;
   assert.ok(digest.summaryMessages.some((f) => f.text.includes('science block')));
   const brief = exportBrief(digest, '', new Set([3]));
   assert.ok(brief.includes('Status: Completed'));
+});
+
+test('brief reserves recent instructions and explicit urgency despite older overdue announcements', () => {
+  const old = Array.from(
+    { length: 6 },
+    (_, i) =>
+      `[01/10/2026, 09:0${i}] Maya: Important: please complete registration by 1 October 2026. Announcement ${i}.`,
+  ).join('\n');
+  const chat =
+    old +
+    '\n[09/10/2026, 10:00] Maya: Please call me immediately; the display is blocked.\n[09/10/2026, 11:00] Arun: Students are informed to solve the exercises and submit them in the next class.\n[09/10/2026, 11:20] Leena: Please come to the library lab.';
+  const d = analyzeChat(chat, '', 1, { asOf: '2026-10-09T15:00', dateFormat: 'day-first' });
+  for (const id of [7, 8, 9]) assert.ok(d.summaryMessages.some((m) => m.id === id));
+  assert.ok(d.summaryMessages.length <= 9);
+  assert.ok(d.findings.find((m) => m.id === 8).tags.includes('action'));
+});
+
+test('known export notice and model noise do not become extra chat facts or repeated labels', () => {
+  const chat =
+    'Messages and calls are end-to-end encrypted. No one outside of this chat can read them.\n[09/10/2026, 10:00] +91 90000 10000: [Forwarded many times] Please register by 15 October 2026.\n[09/10/2026, 10:02] Maya: <message_history_notice message>';
+  const d = analyzeChat(chat);
+  assert.equal(d.messages.length, 2);
+  const ai = buildAIInput(d);
+  assert.equal(ai.totalCount, 1);
+  assert.match(ai.text, /Please register/);
+  assert.doesNotMatch(ai.text, /Forwarded|90000|message_history_notice/);
+  assert.doesNotMatch(d.topics.join(' '), /forwarded|message|notice/);
 });

@@ -1,4 +1,4 @@
-const CACHE = 'catchup-shell-v3';
+const CACHE = 'catchup-shell-v5';
 const SHELL = [
   './',
   './index.html',
@@ -7,6 +7,8 @@ const SHELL = [
   './dates.js',
   './app.js',
   './ai-worker.js',
+  './summary-quality.js',
+  './brief.js',
 ];
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));

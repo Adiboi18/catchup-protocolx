@@ -1,4 +1,5 @@
 import { resolveDeadline } from './dates.js';
+import { buildBrief } from './brief.js';
 
 export const SAMPLE_CHAT = `[09/10/2026, 09:00] Maya: Morning team! Let’s finish planning the campus workshop today.
 [09/10/2026, 09:02] Rohan: Morning! The weather is finally good.
@@ -30,11 +31,30 @@ const systemLine = new RegExp(`^\\[?${DATE},?\\s+${TIME}\\]?\\s*[-–]?\\s*(.+)$
 
 export function parseChat(input) {
   const messages = [];
-  for (const raw of String(input)
+  const lines = String(input)
     .replace(/[\u200e\u200f\u202a-\u202e\ufeff]/g, '')
-    .split(/\r?\n/)) {
+    .split(/\r?\n/);
+  // In an export, only a timestamp begins a message. Labels and URLs inside
+  // announcements ("Venue:", "https:") are content, not new sender names.
+  const timestamped = lines.some((raw) => {
+    const line = raw.trim();
+    return (
+      bracketed.test(line) ||
+      webBracketed.test(line) ||
+      whatsapp.test(line) ||
+      timed.test(line) ||
+      systemLine.test(line)
+    );
+  });
+  for (const raw of lines) {
     const line = raw.trim();
     if (!line) continue;
+    if (
+      timestamped &&
+      !messages.length &&
+      /^Messages and calls are end-to-end encrypted\.(?: No one outside of this chat(?:, not even WhatsApp,)? can read(?: or listen to)? them\.)?$/i.test(line)
+    )
+      continue;
     const webMatch = line.match(webBracketed);
     if (webMatch) {
       messages.push({
@@ -80,7 +100,7 @@ export function parseChat(input) {
       });
       continue;
     }
-    match = line.match(plain);
+    match = !timestamped && line.match(plain);
     if (match) {
       messages.push({
         id: messages.length + 1,
@@ -92,7 +112,7 @@ export function parseChat(input) {
       continue;
     }
     const previous = messages.at(-1);
-    if (previous && (previous.date || previous.time)) previous.text += '\n' + line;
+    if (previous && (timestamped || previous.date || previous.time)) previous.text += '\n' + line;
     else
       messages.push({ id: messages.length + 1, date: '', time: '', sender: 'Message', text: line });
   }
@@ -109,17 +129,39 @@ export function mentionsName(text, name) {
 }
 
 export function extractDeadlines(text) {
+  const month =
+    '(?:January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept?|Oct|Nov|Dec)';
+  const day = '\\d{1,2}(?:st|nd|rd|th)?';
+  const namedDate = `(?:${day}(?:\\s*(?:[-–]|to)\\s*${day})?\\s+${month}(?:\\s*,?\\s*\\d{4})?|${month}\\s+${day}(?:,?\\s+\\d{4})?)`;
   const patterns = [
-    /\b(?:by|before|due(?:\s+(?:on|at|by))?|deadline(?:\s+(?:is|at|on))?|closes?(?:\s+at)?|starts?(?:\s+at)?|arrive(?:\s+by)?|scheduled(?:\s+(?:for|at|on))?)\s+(?!to\b)(?:(?:\d{1,2}(?::\d{2})?\s*(?:AM|PM)\b|\d{1,2}:\d{2}|\d{1,2}[\/.\-]\d{1,2}(?:[\/.\-]\d{2,4})?|today|tomorrow|tonight|(?:next\s+)?(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday))(?:\s+(?:today|tomorrow|tonight))?)/gi,
+    /\b(?:by|before|due(?:\s+(?:on|at|by))?|deadline(?:\s+(?:is|at|on))?|closes?(?:\s+at)?|starts?(?:\s+at)?|arrive(?:\s+by)?|scheduled(?:\s+(?:for|at|on))?)\s+(?!to\b)(?:(?:\d{1,2}(?:[.:]\d{2})?\s*(?:AM|PM)\b|\d{1,2}:\d{2}|\d{1,2}[\/.\-]\d{1,2}(?:[\/.\-]\d{2,4})?|today|tomorrow|tonight|(?:next\s+)?(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday))(?:\s+(?:today|tomorrow|tonight))?)/gi,
     /\b(?:by|before|due(?:\s+(?:on|at|by))?|deadline(?:\s+(?:is|at|on))?|scheduled(?:\s+(?:for|at|on))?)\s+\d{4}-\d{1,2}-\d{1,2}\b/gi,
     /\bin\s+\d+\s+(?:minutes?|hours?|days?)\b/gi,
     /\b(?:deadline|due date)\s*[:–-]\s*[^.!?\n]{1,45}/gi,
+    new RegExp(
+      `\\b(?:on\\s+or\\s+before|by|before|on|from|due(?:\\s+(?:on|at|by))?|deadline(?:\\s+(?:is|at|on))?|closes?(?:\\s+(?:at|on))?|starts?(?:\\s+(?:at|on))?|scheduled(?:\\s+(?:for|at|on))?|(?:event\\s+)?date)\\s*[:–-]?\\s*${namedDate}(?:\\s*(?:to|through|until|[-–])\\s*${namedDate})?\\b`,
+      'gi',
+    ),
+    /\b\d{1,2}[.:]\d{2}\s*(?:AM|PM)\b/gi,
+    /\b(?:by|before|during|in|for|on|at)\s+(?:the\s+)?next\s+class\b/gi,
   ];
-  return [
+  const labels = [
     ...new Set(
       patterns.flatMap((pattern) => [...text.matchAll(pattern)].map((match) => match[0].trim())),
     ),
   ];
+  // Prefer the full source phrase over an overlapping bare time/date fragment.
+  return labels
+    .filter(
+      (label) =>
+        !labels.some(
+          (other) => other !== label && other.toLowerCase().includes(label.toLowerCase()),
+        ),
+    )
+    .sort(
+      (a, b) =>
+        text.toLowerCase().indexOf(a.toLowerCase()) - text.toLowerCase().indexOf(b.toLowerCase()),
+    );
 }
 
 function ownerFor(message, name, participants) {
@@ -168,7 +210,7 @@ function classify(message, name, options, participants) {
       text,
     );
   const action =
-    /\b(?:please|pls|plz)\s+(?!note\b|ignore\b)|\b(?:can|could|would)\s+(?:you|someone|anyone)\b|\b(?:need|needs)\s+to\b|\b(?:must|should)\s+(?:send|submit|bring|arrive|finish|upload|confirm|check|review|prepare|complete|register|attend)\b|\b(?:I|we|I['’]ll|we['’]ll)\s+(?:will\s+)?(?:handle|bring|prepare|send|take care of|work on)\b|\b(?:assigned|action item|todo|to-do)\b/i.test(
+    /\b(?:please|pls|plz)\s+(?!note\b|ignore\b)|\b(?:can|could|would)\s+(?:you|someone|anyone)\b|\b(?:need|needs)\s+to\b|\b(?:must|should|have to)\s+(?:send|submit|bring|arrive|finish|upload|confirm|check|review|prepare|complete|register|attend|solve|fill|take)\b|\b(?:requested|instructed|informed|expected|required)\s+to\b|\b(?:I|we|I['’]ll|we['’]ll)\s+(?:will\s+)?(?:handle|bring|prepare|send|submit|finish|check|take care of|work on)\b|\b(?:assigned|action item|todo|to-do)\b/i.test(
       text,
     );
   const decision =
@@ -180,12 +222,15 @@ function classify(message, name, options, participants) {
     !/\b(?:not|isn't|is not|no longer)\s+(?:very\s+)?(?:urgent|critical|blocked|blocking)\b/i.test(
       text,
     );
-  const important = /\b(?:important|announcement|reminder|attention)\b/i.test(text);
+  const announcement =
+    /\b(?:date|venue|registration|event|schedule)\s*[*_]*\s*:/i.test(text) ||
+    /\bregister\s+(?:here|now)\b/i.test(text);
+  const important = announcement || /\b(?:important|announcement|reminder|attention)\b/i.test(text);
   if (action && !completed) tags.push('action');
   if (decision) tags.push('decision');
   if (deadlines.length) tags.push('deadline');
   if (mention) tags.push('mention');
-  if (!tags.length && (urgent || important)) tags.push('update');
+  if (important || (!tags.length && urgent)) tags.push('update');
   if (!tags.length) return null;
   const score =
     (urgent ? 7 : 0) +
@@ -241,8 +286,18 @@ export function analyzeChat(input, name = '', unreadFrom = 1, options = {}) {
     .sort((a, b) => b.score - a.score || a.id - b.id);
   const chosen = new Map();
   const addBrief = (item) => {
-    if (item) chosen.set(item.id, item);
+    if (item && chosen.size < 9) chosen.set(item.id, item);
   };
+  findings
+    .filter((item) => item.tags.includes('mention'))
+    .slice(0, 2)
+    .forEach(addBrief);
+  addBrief(findings.find((item) => item.reasons.includes('Urgency stated in message')));
+  findings
+    .filter((item) => item.tags.includes('action'))
+    .sort((a, b) => b.id - a.id)
+    .slice(0, 2)
+    .forEach(addBrief);
   findings
     .filter((item) => item.tags.includes('decision'))
     .slice(0, 3)
@@ -250,6 +305,10 @@ export function analyzeChat(input, name = '', unreadFrom = 1, options = {}) {
   addBrief(findings.find((item) => item.priority === 'high'));
   findings
     .filter((item) => item.tags.includes('deadline'))
+    .slice(0, 3)
+    .forEach(addBrief);
+  findings
+    .filter((item) => item.tags.includes('update'))
     .slice(0, 2)
     .forEach(addBrief);
   if (!chosen.size) findings.slice(0, 4).forEach(addBrief);
@@ -261,14 +320,19 @@ export function analyzeChat(input, name = '', unreadFrom = 1, options = {}) {
     0,
   );
   const stops = new Set(
-    'the and for that this with have from your you are will can please today tomorrow need them they their all has our not was just what when there here one should we its using been send also about would could were into then than does did done let lets everyone thanks important urgent by she him her said know morning anyone someone great good looks thing last final bring can hold agreed decided approved confirm whether works closes starts arrive college bottle water spare tried finally more space handle free entry keep need omitted media note attention'.split(
+    'the and for that this with have from your you are will can please today tomorrow need them they their all has our not was just what when there here one should we its using been send also about would could were into then than does did done let lets everyone thanks important urgent by she him her said know morning anyone someone great good looks thing last final bring can hold agreed decided approved confirm whether works closes starts arrive college bottle water spare tried finally more space handle free entry keep need omitted media note attention forwarded message messages http https notice'.split(
       ' ',
     ),
   );
   const names = new Set([...participants, name].join(' ').toLowerCase().split(/\s+/));
   const frequencies = new Map();
   for (const token of messages
-    .map((m) => m.text)
+    .filter((m) => !m.system)
+    .map((m) =>
+      m.text
+        .replace(/https?:\/\/\S+/gi, '')
+        .replace(/<[^>]*omitted>|<message_history_notice message>/gi, ''),
+    )
     .join(' ')
     .toLowerCase()
     .match(/[a-z]{4,}/g) || [])
@@ -298,43 +362,102 @@ export function analyzeChat(input, name = '', unreadFrom = 1, options = {}) {
 }
 
 export function buildAIInput(digest) {
+  const normalize = (text) =>
+    String(text)
+      .replace(/\[Forwarded(?: many times)?\]\s*/gi, '')
+      .replace(/<message_history_notice message>/gi, '')
+      .replace(/\[([^\]\n]+)\]\(\s*https?:\/\/[^\s)]+\s*\)/gi, '$1')
+      .replace(/\[([^\]\n]+)\](?=\s*https?:\/\/)/gi, '$1')
+      .replace(/https?:\/\/\S+/gi, '')
+      .replace(/(^|\s)[*_~`]+|[*_~`]+(?=\s|$|[.,:;!?])/g, '$1')
+      .replace(
+        /^\s*(?:forwarded(?: many times)?|<?(?:media omitted|image omitted|sticker omitted|this message was deleted)>?)\s*[:.]?\s*$/gim,
+        '',
+      )
+      .replace(/[\u200e\u200f\u202a-\u202e\ufeff]/g, '')
+      .split(/\n/)
+      .map((line) => line.trim().replace(/[ \t]+/g, ' '))
+      .filter(Boolean)
+      .join('\n');
+  const usable = digest.messages
+    .filter((message) => !message.system)
+    .map((message) => {
+      const content = normalize(message.text);
+      const sender =
+        message.sender && message.sender !== 'Message' && !/^\+?[\d\s()-]{7,}$/.test(message.sender)
+          ? `${message.sender}: `
+          : '';
+      return { ...message, modelText: content ? sender + content : '' };
+    })
+    .filter((message) => message.modelText);
+  const byId = new Map(usable.map((message) => [message.id, message]));
   // Preserve the most relevant evidence first, then restore conversation order.
-  const totalWords = digest.messages.reduce(
-    (sum, message) => sum + message.text.split(/\s+/).length,
+  const totalWords = usable.reduce(
+    (sum, message) => sum + message.modelText.split(/\s+/).length,
     0,
   );
   const prioritized =
-    totalWords <= 6000 ? digest.messages : [...digest.findings, ...digest.messages];
+    totalWords <= 6000
+      ? usable
+      : [...digest.findings.map((message) => byId.get(message.id)).filter(Boolean), ...usable];
   const selected = new Map();
   let words = 0;
   for (const message of prioritized) {
     if (selected.has(message.id) || message.system) continue;
-    const count = message.text.split(/\s+/).length;
+    const count = message.modelText.split(/\s+/).length;
     if (words + count > 6000) continue;
     selected.set(message.id, message);
     words += count;
   }
-  if (!selected.size && digest.messages.length) {
-    const first = digest.messages.find((message) => !message.system);
+  if (!selected.size && usable.length) {
+    const first = usable[0];
     if (first)
-      selected.set(first.id, { ...first, text: first.text.split(/\s+/).slice(0, 450).join(' ') });
+      selected.set(first.id, {
+        ...first,
+        modelText: first.modelText.split(/\s+/).slice(0, 450).join(' '),
+      });
   }
-  const text = [...selected.values()]
+  const units = [...selected.values()]
     .sort((a, b) => a.id - b.id)
-    .map((message) => `${message.sender}: ${message.text}`)
-    .join('\n');
-  const tokens = text.split(/\s+/).filter(Boolean),
-    chunks = [];
-  for (let i = 0; i < tokens.length; i += 250) chunks.push(tokens.slice(i, i + 250).join(' '));
+    .map((message) => message.modelText);
+  const text = units.join('\n');
+  const chunks = [];
+  let current = [],
+    currentWords = 0;
+  const flush = () => {
+    if (current.length) chunks.push(current.join('\n'));
+    current = [];
+    currentWords = 0;
+  };
+  const add = (part) => {
+    const count = part.split(/\s+/).filter(Boolean).length;
+    if (currentWords + count > 250) flush();
+    current.push(part);
+    currentWords += count;
+  };
+  for (const unit of units) {
+    if (unit.split(/\s+/).length <= 250) {
+      add(unit);
+      continue;
+    }
+    // Split oversized messages at sentence/paragraph boundaries first. A single
+    // oversized sentence is the only case requiring a plain word-boundary split.
+    for (const sentence of unit.split(/\n+|(?<=[.!?])\s+/u).filter(Boolean)) {
+      const tokens = sentence.split(/\s+/).filter(Boolean);
+      for (let i = 0; i < tokens.length; i += 250) add(tokens.slice(i, i + 250).join(' '));
+    }
+  }
+  flush();
   return {
     text,
     chunks,
     selectedCount: selected.size,
-    totalCount: digest.messages.filter((m) => !m.system).length,
+    totalCount: usable.length,
   };
 }
 
 export function exportBrief(digest, aiSummary = '', completed = new Set()) {
+  const brief = buildBrief(digest, completed);
   const labels = {
     action: 'Task',
     decision: 'Decision',
@@ -352,9 +475,23 @@ export function exportBrief(digest, aiSummary = '', completed = new Set()) {
       : []),
     '## Extractive brief',
     '',
-    ...digest.summaryMessages.map(
-      (message) => `- ${message.sender}: ${message.text} [#${message.id}]`,
-    ),
+    ...brief.overview.map((message) => `- ${message.excerpt} [#${message.id}]`),
+    ...(brief.personal.length
+      ? [
+          '',
+          '## For you',
+          '',
+          ...brief.personal.map((message) => `- ${message.excerpt} [#${message.id}]`),
+        ]
+      : []),
+    ...(brief.nextSteps.length
+      ? [
+          '',
+          '## Other follow-ups',
+          '',
+          ...brief.nextSteps.map((message) => `- ${message.excerpt} [#${message.id}]`),
+        ]
+      : []),
     '',
     '## Important messages',
     '',

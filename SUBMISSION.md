@@ -22,7 +22,7 @@ OpenAI ChatGPT/Codex was used for ideation, code generation, debugging, tests, d
 | Organizer area | Implementation and evidence |
 |---|---|
 | Code quality | Formatted modules separate parsing/ranking, date logic, UI and model worker; small dependency-free core; README architecture and documented limits. |
-| Security | Chat input rendered with textContent; no cloud chat endpoint or embedded API key; constrained content policy; opt-in local saving and Forget saved chat. Malicious markup tested as text. |
+| Security | Original chat rendered as text; brief text is escaped before adding controlled highlight markup. No cloud chat endpoint or embedded API key; constrained content policy; opt-in local saving and Forget saved chat. Malicious markup tested as data. |
 | Efficiency | Model loaded only on request in a worker; bounded/chunked model input; deterministic core works without downloading a model. Long-conversation processing benchmark is recorded in TESTING.md. |
 | Testing | Node processing/edge-case tests, three conversation fixtures and actual browser flow checks; limitations and unverified checks reported. |
 | Accessibility | Explicit labels, keyboard-operated upload, visible focus, skip link, named dialog, status announcements, reduced motion and readable secondary text. Not a claim of formal WCAG certification. |

@@ -5,69 +5,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Catch up on unread conversations. Find decisions, action items and deadlines with evidence, entirely on your device."
+      content="A clear, private catch-up on your group conversations, with decisions, tasks, deadlines and original sources."
     />
-    <meta name="theme-color" content="#183c32" />
+    <meta name="theme-color" content="#FFDA22" />
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self' https://cdn.jsdelivr.net https://huggingface.co https://*.huggingface.co https://*.hf.co; img-src 'self' data:; style-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'"
     />
-    <title>CatchUp AI — What did I miss?</title>
+    <title>CatchUp — Your conversation, made clear.</title>
     <link
       rel="icon"
       type="image/svg+xml"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23183c32'/%3E%3Cpath d='M8 9h16v11H15l-5 4v-4H8z' fill='%23d9edaa'/%3E%3Cpath d='m12 14 3 3 6-6' fill='none' stroke='%23183c32' stroke-width='2'/%3E%3C/svg%3E"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23FFDA22' stroke='black' stroke-width='2'/%3E%3Cpath d='M7 9h18v11H14l-5 4v-4H7z' fill='white' stroke='black' stroke-width='2'/%3E%3Cpath d='m11 14 3 3 7-7' fill='none' stroke='black' stroke-width='2.5'/%3E%3C/svg%3E"
     />
     <link rel="stylesheet" href="styles.css" />
     <script type="module" src="app.js"></script>
   </head>
   <body>
-    <a class="skip-link" href="#main-content">Skip to main content</a>
-    <header class="topbar">
-      <a class="brand" href="./" aria-label="CatchUp home"
-        ><span class="brand-icon" aria-hidden="true">↗</span>CatchUp<span class="brand-label"
-          >YOUR CONVERSATION, CAUGHT UP.</span
-        ></a
-      >
-      <div class="header-right">
-        <span class="privacy-pill"><span class="dot"></span>On your device</span
-        ><button class="text-button" id="privacy-button">How privacy works</button>
-      </div>
-    </header>
-    <main id="main-content" tabindex="-1">
-      <section class="heading">
+    <a class="skip-link" href="#main-content">Skip to conversation</a>
+    <div class="app-frame">
+      <header class="topbar">
+        <a class="brand-title" href="./" aria-label="CatchUp home"
+          ><span class="brand-mark" aria-hidden="true">✓</span>CatchUp<span class="brand-note"
+            >LESS NOISE. MORE CLARITY.</span
+          ></a
+        >
+        <button class="text-button" id="privacy-button" type="button">Privacy ↗</button>
+      </header>
+      <section class="hero-section">
         <div>
-          <p class="eyebrow">LESS SCROLLING. MORE CLARITY.</p>
-          <h1>What did I miss<span>?</span></h1>
-          <p class="intro">Understand the conversation. Know what happens next.</p>
+          <p class="eyebrow" id="greeting">Your conversation, made clear.</p>
+          <h1>Catch up.<br />Get on with your day.</h1>
         </div>
-        <div class="heading-note">
-          <span aria-hidden="true">✦</span>
-          <p>A clear next step.<br />A little more headspace.</p>
+        <div class="hero-note">
+          <span class="note-star" aria-hidden="true">✦</span>
+          <p>The important bits.<br /><strong>A little more headspace.</strong></p>
         </div>
       </section>
-      <div class="workspace">
-        <section class="input-panel" aria-labelledby="input-title">
+      <main id="main-content" class="workspace" tabindex="-1">
+        <section class="input-panel panel" aria-labelledby="input-title">
           <div class="panel-heading">
             <div>
-              <span class="step">01 / YOUR CHAT</span>
-              <h2 id="input-title">Start with the conversation</h2>
+              <span class="step-label">01 / YOUR CONVERSATION</span>
+              <h2 id="input-title">Start here</h2>
             </div>
-            <span class="small-icon" aria-hidden="true">≋</span>
+            <button class="text-button" id="demo-button" type="button">Try sample ↗</button>
           </div>
           <div class="input-body">
-            <label for="your-name">Your name <span class="muted">(optional)</span></label>
+            <label for="your-name"
+              >What should we call you? <span class="muted">Optional</span></label
+            >
             <input
               id="your-name"
-              autocomplete="off"
-              placeholder="e.g. Adyan"
+              autocomplete="given-name"
+              placeholder="Your name or chat nickname"
               maxlength="80"
               aria-describedby="name-help"
             />
-            <p class="field-help" id="name-help">We’ll highlight messages that mention you.</p>
-            <div class="chat-label">
-              <label for="chat-input">Conversation</label
-              ><button class="upload-button" id="upload-button" type="button">↑ Upload .txt</button
+            <p class="field-help" id="name-help">
+              We’ll bring messages mentioning you into “For you”.
+            </p>
+            <div class="chat-label-row">
+              <label for="chat-input">Paste your text or conversation</label
+              ><button class="text-button" id="upload-button" type="button">Upload .txt ↑</button
               ><input
                 type="file"
                 id="chat-file"
@@ -78,114 +78,111 @@
             </div>
             <textarea
               id="chat-input"
-              placeholder="Paste your chat here…&#10;&#10;[09/10/2026, 10:05] Maya: We’ve decided to use the library hall.&#10;[09/10/2026, 10:08] Arun: @Adyan please send the slides by 2 PM."
+              placeholder="Drop the conversation here. Plain text works too.&#10;&#10;Maya: We’ve decided to use the library hall.&#10;Arun: @Adyan please send the slides by 2 PM."
               spellcheck="false"
               maxlength="200000"
+              aria-describedby="input-count"
             ></textarea>
-            <div class="textarea-meta">
+            <div class="textarea-footer">
               <span id="input-count">0 messages</span
-              ><button class="text-button" id="demo-button">Try a sample chat ↗</button>
+              ><button class="text-button" id="clear-button" type="button">Clear text</button>
             </div>
-            <div class="scope-row">
-              <label for="unread-from">Catch up from message</label
-              ><input id="unread-from" type="number" min="1" value="1" /><span class="muted"
-                >to the end</span
-              >
-            </div>
-            <div class="scope-help">Already read the first 10? Enter 11.</div>
-            <details class="settings" id="whatsapp-import-panel">
-              <summary>Import from WhatsApp Web · experimental</summary>
-              <p class="field-help">
-                With the optional Brave helper installed, import text currently loaded in one
-                WhatsApp Web tab. This is a partial import, not a full history export. Opening a
-                chat may mark it read.
-              </p>
-              <label for="whatsapp-chat-name">Exact chat or group name</label>
-              <input
-                id="whatsapp-chat-name"
-                maxlength="80"
-                placeholder="e.g. 1C-CSE Batch 2026-30"
-                autocomplete="off"
-              />
-              <button id="whatsapp-import-button" type="button" class="text-button">
-                Import loaded messages
-              </button>
-              <p id="whatsapp-status" class="field-help" role="status">
-                Optional helper required. Upload .txt works without it.
-              </p>
-            </details>
-            <details class="settings">
-              <summary>Date &amp; device settings</summary>
-              <label for="as-of">Current date and time</label
-              ><input type="datetime-local" id="as-of" />
-              <p class="field-help">Used to flag upcoming and overdue deadlines.</p>
-              <label for="date-format">Chat export date format</label
-              ><select id="date-format">
-                <option value="day-first">Day / month / year</option>
-                <option value="month-first">Month / day / year</option></select
-              ><label class="remember-label"
-                ><input type="checkbox" id="remember-chat" />Remember this chat on this
-                device</label
-              >
-              <p class="field-help">
-                Optional. Saves chat, settings and completed tasks in this browser.
-              </p>
-              <button id="forget-chat" class="text-button" type="button">Forget saved chat</button>
-              <p id="storage-status" class="field-help" role="status"></p>
-            </details>
-            <button class="primary-button" id="analyze-button">
-              <span>Catch me up</span><span aria-hidden="true">↗</span>
+            <button class="primary-button" id="analyze-button" type="button">
+              Catch me up <span aria-hidden="true">↗</span>
             </button>
-            <p class="input-footnote">
-              <span aria-hidden="true">◇</span> Chat stays on this device. No account needed.
-            </p>
+            <p class="input-footnote">Your chat stays on this device.</p>
             <p id="input-error" class="error" role="alert" hidden></p>
+            <details class="settings">
+              <summary>Reading range &amp; preferences</summary>
+              <div class="settings-body">
+                <label for="unread-from">First unread message</label
+                ><input id="unread-from" type="number" min="1" value="1" />
+                <p class="field-help">
+                  Already read the first 10? Enter 11. Leave 1 to summarize everything.
+                </p>
+                <label for="date-format">Dates in your chat</label
+                ><select id="date-format">
+                  <option value="day-first">Day / month / year</option>
+                  <option value="month-first">Month / day / year</option>
+                </select>
+                <p class="field-help">If “10/1” means October 1, choose month / day / year.</p>
+                <label for="as-of">Current date &amp; time</label
+                ><input type="datetime-local" id="as-of" />
+                <p class="field-help">Used to show upcoming and past deadlines.</p>
+                <label class="remember-label"
+                  ><input type="checkbox" id="remember-chat" /><span
+                    >Remember this chat on this device</span
+                  ></label
+                >
+                <p class="field-help">
+                  Optional. Saves your chat, preferences and completed tasks in this browser.
+                </p>
+                <button id="forget-chat" class="text-button" type="button">
+                  Forget saved chat
+                </button>
+                <p id="storage-status" class="field-help" role="status"></p>
+              </div>
+            </details>
+            <details class="settings" id="whatsapp-import-panel">
+              <summary>WhatsApp Web import · experimental</summary>
+              <div class="settings-body">
+                <p class="field-help">
+                  Requires the optional Brave helper. Reads only text currently loaded in one
+                  WhatsApp Web tab.
+                </p>
+                <label for="whatsapp-chat-name">Exact chat or group name</label
+                ><input
+                  id="whatsapp-chat-name"
+                  maxlength="80"
+                  placeholder="Chat name"
+                  autocomplete="off"
+                /><button id="whatsapp-import-button" type="button" class="secondary-button">
+                  Import loaded messages
+                </button>
+                <p id="whatsapp-status" class="field-help" role="status">
+                  Optional helper required. Upload .txt works without it.
+                </p>
+              </div>
+            </details>
           </div>
         </section>
-        <section class="results-panel" aria-labelledby="results-title">
-          <div class="results-heading">
+        <section class="results-panel panel" aria-labelledby="results-title">
+          <div class="panel-heading">
             <div>
-              <span class="step">02 / YOUR CATCH-UP</span>
-              <h2 id="results-title">The important bits.</h2>
+              <span class="step-label">02 / THE IMPORTANT BITS</span>
+              <h2 id="results-title">Your catch-up</h2>
             </div>
-            <button class="text-button" id="export-button" disabled>↓ Export brief</button>
+            <button class="text-button" id="export-button" disabled type="button">
+              Save brief ↓
+            </button>
           </div>
           <div id="empty-state" class="empty-state">
-            <div class="empty-illustration" aria-hidden="true">
-              <span class="paper-line"></span><span class="paper-line"></span
-              ><span class="paper-line short"></span><span class="check-stamp">✓</span>
-            </div>
-            <h3>You don’t need to read everything.</h3>
-            <p>
-              Add a conversation, or try the sample.<br />We’ll pull the important bits into one
-              place.
-            </p>
-            <div class="empty-tags">
-              <span>Decisions</span><span>Deadlines</span><span>Your tasks</span>
-            </div>
+            <div class="empty-symbol" aria-hidden="true">↗</div>
+            <h3>Big conversation.<br />Clear next step.</h3>
+            <p>Your brief will appear here. Paste your text or try the sample to get started.</p>
+            <span class="empty-caption">Decisions · deadlines · things to do</span>
           </div>
           <div id="results" hidden>
             <p id="import-coverage" class="field-help" hidden></p>
             <div class="digest-meta">
               <span id="digest-info" role="status" aria-live="polite"></span
-              ><span id="processing-time"></span>
+              ><span id="processing-time" hidden></span>
             </div>
             <div class="stats" id="stats"></div>
-            <section class="summary-card">
+            <section class="summary-card" aria-label="Conversation brief">
               <div class="summary-top">
                 <h3>Your quick brief</h3>
-                <span class="mode-badge" id="summary-mode">Extractive brief</span>
+                <span class="mode-badge" id="summary-mode">Source-backed</span>
               </div>
-              <div id="topic-list" class="topic-list"></div>
               <div id="summary-text"></div>
+            </section>
+            <details class="ai-options">
+              <summary>Optional AI overview</summary>
               <div class="ai-row">
-                <div>
-                  <strong>Want a shorter AI summary?</strong>
-                  <p id="ai-status" aria-live="polite">
-                    Runs locally. First use downloads the model.
-                  </p>
-                </div>
-                <button id="ai-button" class="secondary-button">Use local AI ✦</button>
+                <p id="ai-status" aria-live="polite">
+                  Runs on your device. First use downloads the model.
+                </p>
+                <button id="ai-button" class="secondary-button" type="button">Try local AI</button>
               </div>
               <progress
                 id="ai-progress"
@@ -194,65 +191,67 @@
                 hidden
                 aria-label="AI model download"
               ></progress>
-            </section>
-            <div class="filter-bar" role="group" aria-label="Filter important messages">
-              <button class="filter active" data-filter="all" aria-pressed="true">
-                All important</button
-              ><button class="filter" data-filter="action" aria-pressed="false">Tasks</button
-              ><button class="filter" data-filter="decision" aria-pressed="false">Decisions</button
-              ><button class="filter" data-filter="deadline" aria-pressed="false">Deadlines</button
-              ><button class="filter" data-filter="mention" aria-pressed="false">For you</button>
-            </div>
-            <div class="task-view">
-              <label class="remember-label"
-                ><input type="checkbox" id="only-open" />Hide completed tasks</label
-              ><button class="filter" data-filter="urgent" aria-pressed="false">
-                Needs attention</button
-              ><span id="completed-count"></span>
-            </div>
-            <div class="findings-list" id="findings-list"></div>
-            <div id="no-findings" class="no-findings" hidden>
-              No clear matches in this view. Check the full conversation below.
-            </div>
+            </details>
+            <details class="findings-details">
+              <summary>Explore tasks, decisions &amp; deadlines</summary>
+              <div class="filter-bar" role="group" aria-label="Filter important messages">
+                <button class="filter active" data-filter="all" aria-pressed="true" type="button">
+                  All</button
+                ><button class="filter" data-filter="mention" aria-pressed="false" type="button">
+                  For you</button
+                ><button class="filter" data-filter="action" aria-pressed="false" type="button">
+                  Tasks</button
+                ><button class="filter" data-filter="decision" aria-pressed="false" type="button">
+                  Decisions</button
+                ><button class="filter" data-filter="deadline" aria-pressed="false" type="button">
+                  Deadlines</button
+                ><button class="filter" data-filter="urgent" aria-pressed="false" type="button">
+                  Needs attention
+                </button>
+              </div>
+              <div class="task-view">
+                <label class="remember-label"
+                  ><input type="checkbox" id="only-open" /><span>Hide completed tasks</span></label
+                ><span id="completed-count"></span>
+              </div>
+              <div class="findings-list" id="findings-list"></div>
+              <p id="no-findings" class="no-findings" hidden>
+                No matching messages. Try another filter or read the source conversation.
+              </p>
+            </details>
             <details class="transcript">
               <summary>Read the source conversation <span id="source-count"></span></summary>
               <ol id="source-list"></ol>
             </details>
           </div>
         </section>
-      </div>
+      </main>
       <footer>
-        <span>Built for the unread problem.</span
-        ><span>Local-first · Evidence included · No chat upload</span>
+        <span>CatchUp · Built for the unread problem.</span><span>Made to give you time back.</span>
       </footer>
-    </main>
+    </div>
     <dialog id="privacy-dialog" aria-label="How privacy works">
       <div class="dialog-top">
         <h2>Your chat belongs to you.</h2>
-        <button id="close-privacy" class="icon-button" aria-label="Close privacy information">
+        <button id="close-privacy" class="close-dialog-btn" type="button" aria-label="Close dialog">
           ×
         </button>
       </div>
       <p>
-        CatchUp processes conversations in your browser. It has no chat server, analytics or cloud
-        AI API. Chats are held in tab memory by default. If you turn on “Remember this chat,” the
-        chat, settings and task completion states are saved in this browser’s local storage. Anyone
-        using this browser profile could access that saved data. “Forget saved chat” removes it.
+        CatchUp processes your text in this browser. Our app has no chat upload server or analytics
+        tracker.
       </p>
       <p>
-        <strong>Optional local AI:</strong> the browser downloads model files and runtime code from
-        Hugging Face and jsDelivr. These requests expose normal connection information such as your
-        IP address, but do not include your chat text. The model runs on your device and its files
-        may be cached by your browser.
+        The optional AI downloads model and runtime files from Hugging Face and jsDelivr. Your chat
+        text is processed on this device.
       </p>
       <p>
-        AI summaries can make mistakes. Tasks and deadlines are detected using transparent rules;
-        every finding links to its source message. Tentative date interpretations and unstated
-        owners are marked. There is no automatic completion inference.
+        Chats stay in memory unless you choose to remember them. A saved chat is stored in this
+        browser profile, without encryption. “Forget saved chat” removes that saved copy.
       </p>
       <p>
-        <strong>Export:</strong> the brief is saved to your device only when you select Export.
-        Uploaded .txt files are read locally.
+        AI may miss details. Each source-backed point links to its original message so you can check
+        it.
       </p>
     </dialog>
     <div id="toast" role="status" aria-live="polite"></div>

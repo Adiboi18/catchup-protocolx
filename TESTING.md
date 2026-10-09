@@ -1,41 +1,38 @@
 # Verification record
 
-Executed on Windows in Brave, 9 October 2026. Local prototype and public Vercel production checks are distinguished below.
+Executed on Windows in Brave, 9 October 2026. Current local checks and previous public-hosting checks are distinguished below. Fixtures in this repository are fictional.
 
-## Automated processing checks
+## Current automated checks
 
-`node --test tests/*.test.mjs`: **19 passed, 0 failed**. Covers Android/iOS exports, time-first WhatsApp Web timestamps and multiline messages, name boundaries, priority order, unread ranges, deadline wording, negated urgency/completed-work cases, raw markup handling, AI input/export, relative dates, invalid dates/date formats, and two additional conversations with owners and uncertain dates. AI export retains the source-backed brief. The helper origin boundary allows this app's exact production address and rejects other Vercel sites, lookalikes, unexpected protocols and ports. A 196,975-character / 3,001-message fixture retained an urgent request at its end; analysis took approximately 32–41 ms across recorded runs on this machine (40.3 ms in the latest run). This is not a cross-device performance guarantee.
+`node --test tests/*.test.mjs`: **42 passed, 0 failed**.
 
-`node --check dist/app.js`: passed.
+Coverage includes Android/iOS and time-first WhatsApp exports, multiline announcements and links, bounded name matching, unread ranges, named dates, dot-times, ambiguous dates, explicit urgency, task completion language, owner extraction, markup handling and the helper's exact-origin boundary. New regressions cover recent instructions competing with old overdue announcements, model-input noise, long announcement excerpts, personalized and deduplicated briefs, completion-aware brief selection, plain prose and matching exported facts.
 
-## Actual browser checks
+Seven summary-quality tests cover the observed repeated-label/formatting failure, instruction echoes, generic output, unsupported numeric quantities, supported overviews, safe sentence deduplication and failed aggregation. These are heuristic checks, not factual verification.
 
-- Fictional sample: 18 messages, 6 initial tasks and 3 decisions; filters and source navigation worked.
-- Marking task #13 completed reduced open tasks to 5; hiding completed tasks and selecting For you preserved the remaining slide request.
-- Opt-in browser saving and reload restored the sample and completion state.
-- Actual FLAN-T5 Small generation completed in the browser on the 18-message sample. Selecting Summarize again completed again. After reloading the updated view, actual generation completed and the app showed the experimental overview **and** the source-backed facts together.
-- Model quality limitation observed: the generated overview was “The final decision is to prepare the materials for the workshop.” It omitted the venue and deadlines. Successful generation is not proof of accurate or comprehensive summarization. Source-backed facts remain visible and included in exports.
+A 196,975-character / 3,001-message fictional conversation retained the critical request at its end. Timing varies across runs and devices; no universal performance claim is made.
 
-## Not verified yet
+`node --check dist/app.js` and `node --check dist/ai-worker.js`: passed. `git diff --check`: passed.
 
-Offline model inference, fresh-device cold-start performance, upload/download UI flows, responsive layouts, comprehensive accessibility and every browser/device. No cloud AI endpoint or API key was added. The optional WhatsApp helper is an unverified adapter prototype; parser tests do not prove actual WhatsApp integration.
+## Current actual browser checks
 
-## Public Vercel production checks
+- Opened the updated desktop interface in Brave. The input and brief render together with the reference-inspired yellow canvas, black outlines and warm-white panels.
+- Tested a real exported conversation locally without committing it. Corrected parsing produced 26 entries rather than the previous 62 split entries. The source brief included the registration requirements, explicit urgency and recent class instructions.
+- Actual local-model inference on that conversation hit the quality gate. The generated output was hidden, no AI overview appeared, and the view correctly retained the **Source-backed** label and explanatory status. This is a verified fallback, not a claim that model summary quality is solved.
+- Entered the fictional name Sam and loaded the sample. The heading became **Sam’s catch-up**, sample mentions adapted to Sam, and **For you** contained the slide and microphone requests. The sample parsed 18 messages with 6 open tasks and 3 decisions.
+- The For you filter displayed two findings. Completing task #13 reduced open tasks to 5 and removed that task from the personal brief. Hiding completed tasks left one finding. Test completion was undone.
+- Source #6 expanded the original transcript and highlighted its matching message.
 
-Story: a visitor opens the public website, loads a conversation, gets a local brief, and follows a finding back to its original message. Optional AI also runs in the visitor's browser.
+Brave control became unavailable during the next batch of checks. Privacy-dialog, download and additional sample-model checks from that batch are not claimed as completed. Responsive CSS is implemented, but rendered mobile verification is still pending.
 
-| Boundary | Executed evidence |
-|---|---|
-| Public access | `https://catchup-protocolx.vercel.app` returned HTTP 200 with the CatchUp title using an anonymous request, without a Vercel login. |
-| Hosted assets | All seven deployed app assets returned HTTP 200 and matched local source bytes by SHA-256. |
-| Input to brief | In Brave, Try a sample chat parsed 18 fictional messages, showing 6 initial open tasks, 3 decisions and 2 items needing attention. |
-| Brief to evidence | For you showed the microphone and slides requests. Source #13 expanded the original transcript and focused its matching message. |
-| Task state to UI | Completing #13 reduced open tasks to 5; Hide completed tasks left the slides request in For you. Test completion was then undone for the presentation. |
-| Local model to UI | Use local AI completed on the deployed site, reported 18 of 18 messages processed with FLAN-T5 Small, and displayed the experimental overview alongside source-backed facts. Its output had the same omission limitation recorded above. |
+## Previous public Vercel checks
 
-Vercel reported the production deployment Ready. The application has no backend chat API or database boundary to verify; these checks cover static delivery and browser-local processing. Production was deployed by direct CLI upload; GitHub integration is not connected.
+The earlier production release returned HTTP 200 without login, and all seven assets in that release matched local source bytes. Sample processing, personal filtering, task completion, source navigation and FLAN-T5 generation were tested on that earlier release. Its generated summary omitted important facts, which motivated the current improvements.
 
-## WhatsApp helper prototype
+The current release adds `brief.js` and `summary-quality.js`. Publication must be checked against all nine app assets with anonymous requests and byte comparison. GitHub integration is not connected; a separate direct Vercel deployment is required after source pushes.
 
-Four simulated adapter tests passed: confirmed-chat text extraction with quote/nested-link exclusion, failure on a wrong chat, rejection of another extension sender, and the exact app-origin boundary. Real WhatsApp Web page structure was inspected for the selected group, and selector discrepancies were corrected. This is not an end-to-end import verification. Installing the helper is awaiting user action because automated access to Brave extension settings was blocked.
+## Remaining limits
 
+Offline model inference, fresh-device cold-start performance, rendered mobile layout, upload/download UI flows, comprehensive accessibility and every browser/device are unverified. No cloud chat AI endpoint or API key was added.
+
+The optional WhatsApp helper has four simulated adapter tests covering identity, quote exclusion, extension sender and exact app origin. Installing it and importing a real WhatsApp chat end-to-end remain pending; these tests do not prove actual WhatsApp integration.

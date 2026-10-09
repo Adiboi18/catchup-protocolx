@@ -1,3 +1,4 @@
+import { assessSummary, combineSummaries } from './summary-quality.js';
 let summarizer;
 let loading;
 const MODEL = 'Xenova/flan-t5-small';
@@ -43,22 +44,47 @@ self.onmessage = async ({ data }) => {
         sections: chunks.length,
       });
       const result = await summarizer(
-        `Summarize this group conversation, including the main decisions and important updates:\n${chunks[i]}\nSummary:`,
+        `Summarize the following text in one or two sentences:\n\n${chunks[i]}`,
         {
-          max_new_tokens: 100,
-          min_new_tokens: 12,
+          max_new_tokens: 80,
           do_sample: false,
           num_beams: 1,
           repetition_penalty: 1.15,
+          no_repeat_ngram_size: 3,
         },
       );
-      if (result[0]?.generated_text?.trim()) summaries.push(result[0].generated_text.trim());
+      const checked = assessSummary(result[0]?.generated_text || '', chunks[i]);
+      if (!checked.ok) {
+        self.postMessage({
+          type: 'quality-failure',
+          requestId: data.requestId,
+          reason: checked.reason,
+        });
+        return;
+      }
+      summaries.push(checked.text);
     }
-    if (!summaries.length) throw new Error('Local model did not generate a summary.');
+    if (!summaries.length) {
+      self.postMessage({
+        type: 'quality-failure',
+        requestId: data.requestId,
+        reason: 'No chunk passed check',
+      });
+      return;
+    }
+    const overview = combineSummaries(summaries, data.text || chunks.join('\n'));
+    if (!overview.ok) {
+      self.postMessage({
+        type: 'quality-failure',
+        requestId: data.requestId,
+        reason: overview.reason,
+      });
+      return;
+    }
     self.postMessage({
       type: 'result',
       requestId: data.requestId,
-      text: summaries.join('\n\n'),
+      text: overview.text,
       model: MODEL,
     });
   } catch (error) {
