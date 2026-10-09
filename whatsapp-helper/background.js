@@ -6,6 +6,7 @@ function allowedApp(raw) {
       (['127.0.0.1', 'localhost'].includes(url.hostname) &&
         url.protocol === 'http:' &&
         url.port === '4173') ||
+      url.origin === 'https://catchup-protocolx.vercel.app' ||
       (url.origin === 'https://adiboi18.github.io' &&
         url.pathname.startsWith('/catchup-protocolx/'))
     );

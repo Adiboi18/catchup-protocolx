@@ -11,6 +11,7 @@ This is a truthful, curated record of meaningful prompts in the development conv
 5. The user asked: **“so tell me the plan, what are we exactly doing, ask me questions related to the problem statement”**.
 6. Asked for the primary benefit, the user selected **“Understand the whole conversation quickly.”** This shifted the brief toward conversation context and decisions, with tasks as supporting information.
 7. The user supplied a comprehensive implementation brief beginning **“ROLE: Elite Hackathon Winner, Senior Full-Stack Engineer, AI Architect, Product Designer, and Beginner Mentor.”** It required an actual tested application, local-first processing where feasible, truthful distinction between rules and AI, owners/deadlines, task completion, three test conversations, GitHub/deployment preparation, and presentation coaching.
+8. The user requested **“push it on github and host the demo on Vercel.”** This explicitly selected Vercel for public hosting.
 
 ## Engineering iterations performed by Codex
 
@@ -22,6 +23,8 @@ This is a truthful, curated record of meaningful prompts in the development conv
 - The initial DistilBART model download encountered a network error. The current implementation uses smaller local FLAN-T5 Small weights. This change is a reliability tradeoff, not a claim that the smaller model has stronger summary quality.
 - Added chunked summarization and explicit coverage counts rather than silently truncating a long conversation.
 - The user briefly requested an OpenRouter replacement, then instructed us to retry local inference. No OpenRouter integration or key was added. FLAN-T5 Small completed actual browser inference, but its sample summary was too vague, so the source-backed brief is now preserved alongside the experimental AI overview, including in exported briefs.
+- Uploaded the project source to the public `Adiboi18/catchup-protocolx` GitHub repository and verified the `main` commit. Added static Vercel configuration to serve `dist/` without a build step. Completed direct production deployment through the official Vercel CLI to [catchup-protocolx.vercel.app](https://catchup-protocolx.vercel.app); the URL returned HTTP 200 without authentication and served the CatchUp page.
+- Automatic approval review blocked the GitHub OAuth connection before its permission scope was displayed. Direct upload through the official Vercel CLI deployed the app without granting Vercel access to the GitHub account. The CLI was installed in an isolated working directory rather than added as an application dependency. GitHub integration remains disconnected, so future source pushes require a separate Vercel redeployment.
 
 ## Runtime prompt sent to the local model
 

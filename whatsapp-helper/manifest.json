@@ -7,6 +7,6 @@
   "host_permissions": ["https://web.whatsapp.com/*"],
   "content_scripts": [
     {"matches":["https://web.whatsapp.com/*"],"js":["reader.js"],"run_at":"document_idle"},
-    {"matches":["http://127.0.0.1/*","http://localhost/*","https://adiboi18.github.io/catchup-protocolx/*"],"js":["bridge.js"],"run_at":"document_idle"}
+    {"matches":["http://127.0.0.1/*","http://localhost/*","https://adiboi18.github.io/catchup-protocolx/*","https://catchup-protocolx.vercel.app/*"],"js":["bridge.js"],"run_at":"document_idle"}
   ]
 }

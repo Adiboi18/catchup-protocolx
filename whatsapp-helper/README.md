@@ -4,9 +4,9 @@ This is a local browser helper, **not an official WhatsApp integration or full c
 
 ## Install in Brave for a local test
 
-1. Review the four small source files. The helper needs permission to read WhatsApp Web and runs a bridge only on CatchUp's local preview / GitHub Pages path.
+1. Review the four small source files. The helper needs permission to read WhatsApp Web and runs a bridge only on CatchUp's local preview at port 4173, the GitHub Pages path, and the exact production origin `https://catchup-protocolx.vercel.app`. Other Vercel sites and preview origins are not allowed.
 2. Open `brave://extensions`, enable Developer mode, select Load unpacked and select this `whatsapp-helper` folder. Installing grants persistent read access to WhatsApp Web; disable/remove the helper after testing if you do not need it.
-3. Reload CatchUp and WhatsApp Web. Sign in to WhatsApp Web yourself using your own account.
+3. If updating an already installed helper, select Reload for it in Brave's extension settings. Reload CatchUp and WhatsApp Web. Sign in to WhatsApp Web yourself using your own account.
 4. In CatchUp, expand **Import from WhatsApp Web**, enter an exact chat name and click **Import loaded messages**. This changes the selected chat and may mark it read in WhatsApp.
 5. Verify the displayed chat name and import count; CatchUp labels it partial. Select Catch me up. Messages stay in the browser unless you explicitly export/save them.
 

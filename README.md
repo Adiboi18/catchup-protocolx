@@ -4,7 +4,7 @@ CatchUp helps students understand an unread group conversation quickly, then see
 
 ## Try it
 
-The deployment link will be added after public hosting is verified. The repository is [Adiboi18/catchup-protocolx](https://github.com/Adiboi18/catchup-protocolx).
+Open the [live CatchUp demo](https://catchup-protocolx.vercel.app). The source repository is [Adiboi18/catchup-protocolx](https://github.com/Adiboi18/catchup-protocolx). The production URL returned HTTP 200 without authentication and served the CatchUp page.
 
 1. Open the app and select **Try a sample chat**, or paste a chat / upload a plain-text export.
 2. Enter your name and optionally choose the first unread message.
@@ -68,10 +68,12 @@ Open `http://127.0.0.1:4173`. There are no npm dependencies to install. The opti
 Run processing tests:
 
 ```sh
-node --test tests/engine.test.mjs
+node --test tests/*.test.mjs
 ```
 
-For static hosting, serve `dist/`. The root `index.html` redirects to `dist/` for GitHub Pages branch deployments; `.nojekyll` disables Jekyll processing.
+For static hosting, serve `dist/`. The included `vercel.json` configures Vercel to serve this directory directly, with no framework, package installation or build step. `server.mjs` is only the local preview server. The root `index.html` redirects to `dist/` for optional GitHub Pages branch deployments; `.nojekyll` disables Jekyll processing.
+
+The live demo was deployed to Vercel production by direct upload through the official Vercel CLI. The GitHub repository is not connected to Vercel, so future GitHub pushes do **not** automatically deploy. After changing the app, redeploy the current files separately through Vercel. See `TESTING.md` for the verification record.
 
 ## Privacy and its limits
 

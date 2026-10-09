@@ -4,8 +4,9 @@
     location.protocol === 'http:' &&
     location.port === '4173';
   const publicApp =
-    location.origin === 'https://adiboi18.github.io' &&
-    location.pathname.startsWith('/catchup-protocolx/');
+    location.origin === 'https://catchup-protocolx.vercel.app' ||
+    (location.origin === 'https://adiboi18.github.io' &&
+      location.pathname.startsWith('/catchup-protocolx/'));
   if (!local && !publicApp) return;
   document.documentElement.dataset.catchupWhatsApp = 'ready';
   document.addEventListener('click', (event) => {

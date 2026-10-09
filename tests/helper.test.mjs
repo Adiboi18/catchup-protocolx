@@ -40,3 +40,54 @@ test('helper ignores messages from a different extension',()=>{
   assert.equal(listener({type:'catchup-read',name:'Sample Group'},{id:'wrong-extension'},()=>called=true),undefined);
   assert.equal(called,false);
 });
+
+test('helper allows the exact production origin and rejects other or lookalike origins', async () => {
+  const [backgroundScript, bridgeScript, manifestText] = await Promise.all([
+    readFile(new URL('../whatsapp-helper/background.js', import.meta.url), 'utf8'),
+    readFile(new URL('../whatsapp-helper/bridge.js', import.meta.url), 'utf8'),
+    readFile(new URL('../whatsapp-helper/manifest.json', import.meta.url), 'utf8'),
+  ]);
+  const background = {
+    URL,
+    chrome: { runtime: { onMessage: { addListener() {} } } },
+  };
+  vm.runInNewContext(backgroundScript, background);
+  const bridgeAccepts = (raw) => {
+    const dataset = {};
+    vm.runInNewContext(bridgeScript, {
+      location: new URL(raw),
+      document: { documentElement: { dataset }, addEventListener() {} },
+    });
+    return dataset.catchupWhatsApp === 'ready';
+  };
+  const allowed = [
+    'https://catchup-protocolx.vercel.app/',
+    'https://catchup-protocolx.vercel.app/index.html',
+    'http://127.0.0.1:4173/',
+    'https://adiboi18.github.io/catchup-protocolx/',
+  ];
+  const rejected = [
+    'https://another-project.vercel.app/',
+    'https://catchup-protocolx-preview.vercel.app/',
+    'https://catchup-protocolx.vercel.app.evil.example/',
+    'https://catchup-protocolx.vercel.app@evil.example/',
+    'http://catchup-protocolx.vercel.app/',
+    'https://catchup-protocolx.vercel.app:444/',
+    'https://adiboi18.github.io/another-project/',
+    'http://127.0.0.1:4174/',
+  ];
+  for (const raw of allowed) {
+    assert.equal(background.allowedApp(raw), true, `background should allow ${raw}`);
+    assert.equal(bridgeAccepts(raw), true, `bridge should allow ${raw}`);
+  }
+  for (const raw of rejected) {
+    assert.equal(background.allowedApp(raw), false, `background should reject ${raw}`);
+    assert.equal(bridgeAccepts(raw), false, `bridge should reject ${raw}`);
+  }
+  assert.equal(background.allowedApp('not a URL'), false);
+  const bridgeMatches = JSON.parse(manifestText).content_scripts.find((entry) =>
+    entry.js.includes('bridge.js'),
+  ).matches;
+  assert.ok(bridgeMatches.includes('https://catchup-protocolx.vercel.app/*'));
+  assert.ok(bridgeMatches.every((match) => !match.includes('*.vercel.app')));
+});

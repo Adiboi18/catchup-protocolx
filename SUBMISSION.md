@@ -4,8 +4,8 @@ Transcribed from the organizer's slides supplied on 9 October 2026. No numerical
 
 ## Required submission fields
 
-- GitHub repository link: https://github.com/Adiboi18/catchup-protocolx — must contain the submitted source and be public.
-- Deployed project link: add the verified live URL before submission; localhost is not a deployment.
+- GitHub repository link: https://github.com/Adiboi18/catchup-protocolx — public, with the submitted source pushed to `main`.
+- Deployed project link: https://catchup-protocolx.vercel.app — verified public Vercel production demo.
 - Brief project description: use the introduction below.
 - Clearly state which GenAI services/models were used and where: use the disclosure below and README/PROMPTS.md.
 
