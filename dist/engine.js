@@ -52,7 +52,9 @@ export function parseChat(input) {
     if (
       timestamped &&
       !messages.length &&
-      /^Messages and calls are end-to-end encrypted\.(?: No one outside of this chat(?:, not even WhatsApp,)? can read(?: or listen to)? them\.)?$/i.test(line)
+      /^Messages and calls are end-to-end encrypted\.(?: No one outside of this chat(?:, not even WhatsApp,)? can read(?: or listen to)? them\.)?$/i.test(
+        line,
+      )
     )
       continue;
     const webMatch = line.match(webBracketed);

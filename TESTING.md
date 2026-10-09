@@ -27,6 +27,12 @@ A 196,975-character / 3,001-message fictional conversation retained the critical
 
 Brave control became unavailable during the next batch of checks. Privacy-dialog, download and additional sample-model checks from that batch are not claimed as completed. Responsive CSS is implemented, but rendered mobile verification is still pending.
 
+## Final release verification
+
+The final optimization release `dpl_8YQHtqy4iYVCHudYtAxJWoGYXTZR` reached **READY** and is live at `https://catchup-protocolx.vercel.app`. App/documentation commit `cdd9891` was pushed to GitHub `main` and the remote commit was verified. Anonymous HTTP checks returned 200 for all nine app assets, with every SHA-256 matching tested local files. The production response exposes `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY` and disabled camera/microphone/geolocation permissions. Brave remained unavailable for a fresh interaction check; no new rendered-mobile or completed-download claim is made.
+
+The follow-up verification-record commit includes a formatter-only change to `engine.js` that was already in the verified deployment. It changes no processing behavior.
+
 ## Previous public Vercel checks
 
 The earlier production release returned HTTP 200 without login, and all seven assets in that release matched local source bytes. Sample processing, personal filtering, task completion, source navigation and FLAN-T5 generation were tested on that earlier release. Its generated summary omitted important facts, which motivated the current improvements.

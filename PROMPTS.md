@@ -44,6 +44,8 @@ The prompt is executed on-device through a Web Worker. The app does not send thi
 
 ## Verification integrity
 
+The final optimization added `PROMPT.md` as the concise submission record of actual prompts, constraints and acceptance checks. It added seven controller-flow regressions (45 total passing tests), repaired the sample and failure paths, clarified the app's unique value and introduced security response headers. The participant explicitly authorized publishing through the previously approved Git/Vercel tools when Brave control was unavailable.
+
 Claims in `TESTING.md` must refer to actual executed checks. Model availability, cached offline inference, and summary accuracy must not be inferred solely from generated code. The public repository will be updated if any additional AI tool is used.
 
 - At the user’s request, completely removed the experimental WhatsApp Web helper and its interface, bridge, extension files and adapter tests. Paste and local .txt upload remain the supported input paths.
