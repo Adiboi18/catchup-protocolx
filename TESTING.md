@@ -4,9 +4,9 @@ Executed on Windows in Brave, 9 October 2026. Current local checks and previous 
 
 ## Current automated checks
 
-`node --test tests/*.test.mjs`: **42 passed, 0 failed**.
+`node --test tests/*.test.mjs`: **38 passed, 0 failed**.
 
-Coverage includes Android/iOS and time-first WhatsApp exports, multiline announcements and links, bounded name matching, unread ranges, named dates, dot-times, ambiguous dates, explicit urgency, task completion language, owner extraction, markup handling and the helper's exact-origin boundary. New regressions cover recent instructions competing with old overdue announcements, model-input noise, long announcement excerpts, personalized and deduplicated briefs, completion-aware brief selection, plain prose and matching exported facts.
+Coverage includes Android/iOS and time-first WhatsApp exports, multiline announcements and links, bounded name matching, unread ranges, named dates, dot-times, ambiguous dates, explicit urgency, task completion language, owner extraction, markup handling. New regressions cover recent instructions competing with old overdue announcements, model-input noise, long announcement excerpts, personalized and deduplicated briefs, completion-aware brief selection, plain prose and matching exported facts.
 
 Seven summary-quality tests cover the observed repeated-label/formatting failure, instruction echoes, generic output, unsupported numeric quantities, supported overviews, safe sentence deduplication and failed aggregation. These are heuristic checks, not factual verification.
 
@@ -37,4 +37,4 @@ GitHub integration is not connected; a separate direct Vercel deployment is requ
 
 Offline model inference, fresh-device cold-start performance, rendered mobile layout, upload/download UI flows, comprehensive accessibility and every browser/device are unverified. No cloud chat AI endpoint or API key was added.
 
-The optional WhatsApp helper has four simulated adapter tests covering identity, quote exclusion, extension sender and exact app origin. Installing it and importing a real WhatsApp chat end-to-end remain pending; these tests do not prove actual WhatsApp integration.
+The WhatsApp Web helper, import interface, message bridge and its four adapter tests have been removed. Text paste and local .txt upload remain supported.

@@ -123,27 +123,6 @@
                 <p id="storage-status" class="field-help" role="status"></p>
               </div>
             </details>
-            <details class="settings" id="whatsapp-import-panel">
-              <summary>WhatsApp Web import · experimental</summary>
-              <div class="settings-body">
-                <p class="field-help">
-                  Requires the optional Brave helper. Reads only text currently loaded in one
-                  WhatsApp Web tab.
-                </p>
-                <label for="whatsapp-chat-name">Exact chat or group name</label
-                ><input
-                  id="whatsapp-chat-name"
-                  maxlength="80"
-                  placeholder="Chat name"
-                  autocomplete="off"
-                /><button id="whatsapp-import-button" type="button" class="secondary-button">
-                  Import loaded messages
-                </button>
-                <p id="whatsapp-status" class="field-help" role="status">
-                  Optional helper required. Upload .txt works without it.
-                </p>
-              </div>
-            </details>
           </div>
         </section>
         <section class="results-panel panel" aria-labelledby="results-title">
@@ -163,7 +142,6 @@
             <span class="empty-caption">Decisions · deadlines · things to do</span>
           </div>
           <div id="results" hidden>
-            <p id="import-coverage" class="field-help" hidden></p>
             <div class="digest-meta">
               <span id="digest-info" role="status" aria-live="polite"></span
               ><span id="processing-time" hidden></span>

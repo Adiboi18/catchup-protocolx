@@ -19,8 +19,6 @@ let aiBusy = false;
 let timer;
 let completed = new Set();
 let completionChat = '';
-let whatsAppRequest = '';
-let importTimer;
 const STORAGE_KEY = 'catchup-saved-v1';
 function chatKey(text) {
   let hash = 2166136261;
@@ -74,7 +72,6 @@ function personalize() {
 }
 function invalidate() {
   personalize();
-  $('import-coverage').hidden = true;
   aiBusy = false;
   requestId++;
   if (worker) {
@@ -519,76 +516,6 @@ function aiFailed(message) {
   console.warn('Local AI could not run:', message);
 }
 $('analyze-button').addEventListener('click', analyze);
-// The optional extension performs the actual read only on a trusted user click.
-$('whatsapp-import-panel').addEventListener('toggle', () => {
-  if (!whatsAppRequest)
-    $('whatsapp-status').textContent =
-      document.documentElement.dataset.catchupWhatsApp === 'ready'
-        ? 'Helper connected. Open one WhatsApp Web tab and choose a chat name.'
-        : 'Helper not installed. Upload .txt works without it.';
-});
-$('whatsapp-import-button').addEventListener('click', () => {
-  if (document.documentElement.dataset.catchupWhatsApp !== 'ready') {
-    $('whatsapp-status').textContent =
-      'Install the optional CatchUp helper in Brave, then reload this page. This website cannot read WhatsApp by itself.';
-    return;
-  }
-  if (!$('whatsapp-chat-name').value.trim()) {
-    $('whatsapp-status').textContent = 'Enter the exact chat or group name.';
-    $('whatsapp-chat-name').focus();
-    return;
-  }
-  whatsAppRequest = crypto.randomUUID();
-  $('whatsapp-import-button').dataset.requestId = whatsAppRequest;
-  $('whatsapp-import-button').disabled = true;
-  $('whatsapp-status').textContent = 'Confirming the named chat and reading loaded text…';
-  clearTimeout(importTimer);
-  importTimer = setTimeout(() => {
-    whatsAppRequest = '';
-    delete $('whatsapp-import-button').dataset.requestId;
-    $('whatsapp-import-button').disabled = false;
-    $('whatsapp-status').textContent =
-      'No response from the helper. Reload CatchUp and WhatsApp Web, then retry.';
-  }, 12000);
-});
-window.addEventListener('message', (event) => {
-  if (
-    event.source !== window ||
-    event.origin !== location.origin ||
-    event.data?.type !== 'catchup-import-result' ||
-    !whatsAppRequest ||
-    event.data.requestId !== whatsAppRequest
-  )
-    return;
-  clearTimeout(importTimer);
-  whatsAppRequest = '';
-  delete $('whatsapp-import-button').dataset.requestId;
-  $('whatsapp-import-button').disabled = false;
-  const result = event.data.result;
-  if (
-    !result?.ok ||
-    typeof result.text !== 'string' ||
-    result.text.length > 200000 ||
-    result.name !== $('whatsapp-chat-name').value.trim().normalize('NFKC') ||
-    result.partial !== true
-  ) {
-    $('whatsapp-status').textContent =
-      result?.error || 'Import could not be confirmed. Use Upload .txt instead.';
-    return;
-  }
-  invalidate();
-  $('remember-chat').checked = false;
-  $('chat-input').value = result.text;
-  $('unread-from').value = '1';
-  completed = new Set();
-  completionChat = '';
-  updateCount();
-  analyze();
-  const coverage = `Partial WhatsApp import: ${result.name} · ${parseChat(result.text).length} loaded text messages. Older history, media and unloaded messages are excluded.`;
-  $('whatsapp-status').textContent = coverage;
-  $('import-coverage').textContent = coverage;
-  $('import-coverage').hidden = false;
-});
 $('chat-input').addEventListener('input', () => {
   invalidate();
   updateCount();

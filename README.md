@@ -27,7 +27,6 @@ Open the [live CatchUp demo](https://catchup-protocolx.vercel.app). The source r
 - Optional browser-local saving of chat, preferences and task completion.
 - Cached app shell for offline core use after initial visit. Offline generative AI support is not guaranteed.
 - Optional in-browser FLAN-T5 Small summaries. Core extraction does not require model download.
-- Experimental optional Brave helper: import currently loaded text from a named WhatsApp Web chat locally. Installation and a real-chat test are still pending; see `whatsapp-helper/README.md`. Partial import is clearly labelled.
 
 ## Architecture
 
@@ -97,7 +96,7 @@ No other generative AI tools have been used for the submitted project at this st
 
 - English-first rules and model; slang, sarcasm, indirect instructions and other languages may be missed.
 - Exact name matching does not automatically infer nicknames or every pronoun.
-- The website itself does not sign in to WhatsApp, Slack or Teams or read other applications. An optional local helper uses the user's existing WhatsApp Web session to import loaded text; it does not import attachments/audio or complete history.
+- The website does not connect to chat accounts or read other applications. Input is supplied by text paste or local .txt upload.
 - Rules do not reliably resolve every negation, contradiction or superseded decision; verify source evidence.
 - Tasks are completed manually; completion messages are not matched semantically to earlier tasks.
 - Relative dates without reliable timestamps are tentative. All dates use the device's local timezone.

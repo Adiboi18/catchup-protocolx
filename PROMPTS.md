@@ -45,3 +45,5 @@ The prompt is executed on-device through a Web Worker. The app does not send thi
 ## Verification integrity
 
 Claims in `TESTING.md` must refer to actual executed checks. Model availability, cached offline inference, and summary accuracy must not be inferred solely from generated code. The public repository will be updated if any additional AI tool is used.
+
+- At the user’s request, completely removed the experimental WhatsApp Web helper and its interface, bridge, extension files and adapter tests. Paste and local .txt upload remain the supported input paths.

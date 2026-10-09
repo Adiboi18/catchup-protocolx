@@ -1,4 +1,4 @@
-const CACHE = 'catchup-shell-v5';
+const CACHE = 'catchup-shell-v6';
 const SHELL = [
   './',
   './index.html',
