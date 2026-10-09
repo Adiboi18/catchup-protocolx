@@ -1,0 +1,7 @@
+.git
+.openai
+tests
+samples
+whatsapp-helper
+*.md
+server.mjs

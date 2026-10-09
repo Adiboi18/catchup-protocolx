@@ -1,0 +1,4 @@
+This is a note without timestamps or sender names.
+%% an unusual line with no structured message format %%
+Please review the worksheet by 2 PM.
+<img src=x onerror=alert('should not execute')>

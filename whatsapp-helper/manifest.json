@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "CatchUp — WhatsApp local import",
+  "version": "0.1.0",
+  "description": "Import loaded messages from a named WhatsApp Web chat into CatchUp when you click Import. No cloud upload or account credentials.",
+  "background": {"service_worker": "background.js"},
+  "host_permissions": ["https://web.whatsapp.com/*"],
+  "content_scripts": [
+    {"matches":["https://web.whatsapp.com/*"],"js":["reader.js"],"run_at":"document_idle"},
+    {"matches":["http://127.0.0.1/*","http://localhost/*","https://adiboi18.github.io/catchup-protocolx/*"],"js":["bridge.js"],"run_at":"document_idle"}
+  ]
+}
