@@ -4,9 +4,11 @@ CatchUp helps students understand an unread group conversation quickly, then see
 
 ## Try it
 
+Our distinctive value is an evidence-backed personal catch-up: your mentions come first, completed tasks leave the brief, and each point opens its original message. The core brief works immediately on your device, with optional local AI and a usable fallback.
+
 Open the [live CatchUp demo](https://catchup-protocolx.vercel.app). The source repository is [Adiboi18/catchup-protocolx](https://github.com/Adiboi18/catchup-protocolx). The production URL returned HTTP 200 without authentication and served the CatchUp page.
 
-1. Open the app and select **Try a sample chat**, or paste a chat / upload a plain-text export.
+1. Open the app and select **Try sample**, or paste a chat / upload a plain-text export.
 2. Enter your name and optionally choose the first unread message.
 3. Select **Catch me up**. Read your source-backed brief, with personal mentions first and the broader conversation underneath.
 4. Expand **Explore tasks, decisions & deadlines** to use the **For you**, **Decisions**, **Deadlines**, **Tasks**, or **Needs attention** filters.
@@ -18,7 +20,6 @@ Open the [live CatchUp demo](https://catchup-protocolx.vercel.app). The source r
 - Plain-text paste and WhatsApp-style Android/iOS `.txt` exports; realistic fictional sample input.
 - Concise source-backed overview covering decisions, important updates, explicitly urgent requests and recent tasks. Long announcements are abridged, with original evidence one click away.
 - Personal greeting and catch-up title using the entered name; matching mentions appear in a dedicated **For you** section. Completing a task updates both the brief and task counts.
-- Local keyword topic hints, clearly distinct from generative topic understanding.
 - Task owners where explicitly identifiable; otherwise **Not specified / not confirmed**.
 - Explicit deadlines, configurable current date/time and day-first/month-first date interpretation.
 - Tentative date interpretations visibly marked; no fabricated precise deadline for ambiguous messages.
@@ -60,6 +61,8 @@ All readable messages are considered up to a 6,000-word AI budget. For longer co
 Install a current Node.js release if needed, then run:
 
 ```sh
+git clone https://github.com/Adiboi18/catchup-protocolx.git
+cd catchup-protocolx
 node server.mjs
 ```
 
@@ -84,6 +87,8 @@ Chat saving is off by default. If enabled, raw chat, name, settings and completi
 These are implementation properties supported by source inspection and functional tests, not a claim of a formal security audit or supply-chain guarantee. See `TESTING.md` for verified versus untested behavior.
 
 ## AI disclosure
+
+See [PROMPT.md](PROMPT.md) for actual prompts, requirements and acceptance checks. [PROMPTS.md](PROMPTS.md) retains the longer development record.
 
 | Tool/model | Use |
 |---|---|

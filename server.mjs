@@ -12,6 +12,14 @@ const types = {
 };
 http
   .createServer(async (req, res) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    if (!['GET', 'HEAD'].includes(req.method)) {
+      res.writeHead(405, { Allow: 'GET, HEAD' });
+      return res.end('Method not allowed');
+    }
     try {
       const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
       const file = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
@@ -25,7 +33,7 @@ http
           (types[path.extname(file)] || 'application/octet-stream') + '; charset=utf-8',
         'Cache-Control': 'no-cache',
       });
-      res.end(data);
+      res.end(req.method === 'HEAD' ? undefined : data);
     } catch {
       res.writeHead(404);
       res.end('Not found');

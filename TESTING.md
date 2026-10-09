@@ -4,7 +4,9 @@ Executed on Windows in Brave, 9 October 2026. Current local checks and previous 
 
 ## Current automated checks
 
-`node --test tests/*.test.mjs`: **38 passed, 0 failed**.
+`node --test tests/*.test.mjs`: **45 passed, 0 failed**.
+
+Seven final controller-flow tests execute actual `app.js` with a DOM adapter: empty input, invalid unread settings, literal sample names/date reset, worker startup failure, download-link attachment, mobile focus/reduced motion and a fresh clock on restore. These verify event wiring and state, not rendering or download completion. Deployment headers now restrict framing, MIME sniffing, referrers and unused device permissions. The local preview server accepts GET/HEAD only.
 
 Coverage includes Android/iOS and time-first WhatsApp exports, multiline announcements and links, bounded name matching, unread ranges, named dates, dot-times, ambiguous dates, explicit urgency, task completion language, owner extraction, markup handling. New regressions cover recent instructions competing with old overdue announcements, model-input noise, long announcement excerpts, personalized and deduplicated briefs, completion-aware brief selection, plain prose and matching exported facts.
 

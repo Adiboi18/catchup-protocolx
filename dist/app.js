@@ -72,6 +72,7 @@ function personalize() {
 }
 function invalidate() {
   personalize();
+  $('input-error').hidden = true;
   aiBusy = false;
   requestId++;
   if (worker) {
@@ -387,6 +388,7 @@ function analyze() {
   if (!Number.isInteger(from) || from < 1 || from > count) {
     $('input-error').textContent = `Choose a starting message between 1 and ${count}.`;
     $('input-error').hidden = false;
+    $('unread-from').closest('details').open = true;
     $('unread-from').focus();
     return;
   }
@@ -405,6 +407,8 @@ function analyze() {
   if (!$('as-of').value || Number.isNaN(new Date($('as-of').value).getTime())) {
     $('input-error').textContent = 'Choose a valid current date and time in settings.';
     $('input-error').hidden = false;
+    $('as-of').closest('details').open = true;
+    $('as-of').focus();
     return;
   }
   digest = analyzeChat($('chat-input').value, $('your-name').value, from, {
@@ -433,7 +437,14 @@ function analyze() {
   renderFindings();
   renderSources();
   persist();
-  if (innerWidth <= 700) $('results-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (innerWidth <= 700) {
+    $('results-title').scrollIntoView({
+      behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'start',
+    });
+    $('results-title').tabIndex = -1;
+    $('results-title').focus({ preventScroll: true });
+  }
 }
 function startAI() {
   if (!digest) return;
@@ -443,6 +454,9 @@ function startAI() {
     return;
   }
   const id = ++requestId;
+  aiSummary = '';
+  $('summary-mode').textContent = 'Source-backed';
+  renderSummary();
   aiBusy = true;
   $('ai-button').disabled = true;
   $('ai-button').textContent = 'Working…';
@@ -450,62 +464,68 @@ function startAI() {
     'Preparing the local model. The first download may take a few minutes.';
   $('ai-progress').hidden = false;
   $('ai-progress').value = 0;
-  if (!worker) {
-    worker = new Worker(new URL('./ai-worker.js', import.meta.url), { type: 'module' });
-    worker.onmessage = ({ data }) => {
-      if (data.type === 'progress') {
-        if (!aiBusy) return;
-        $('ai-progress').value = data.progress;
-        if (data.total)
+  try {
+    if (!worker) {
+      worker = new Worker(new URL('./ai-worker.js', import.meta.url), { type: 'module' });
+      worker.onmessage = ({ data }) => {
+        if (data.type === 'progress') {
+          if (!aiBusy) return;
+          $('ai-progress').value = data.progress;
+          if (data.total)
+            $('ai-status').textContent =
+              `Downloading model files: ${(data.loaded / 1048576).toFixed(0)} / ${(data.total / 1048576).toFixed(0)} MB. Chat stays here.`;
+          else if (data.status === 'ready')
+            $('ai-status').textContent = 'Model ready. Creating your summary on this device…';
+          return;
+        }
+        if (data.requestId !== requestId || !digest) return;
+        if (data.type === 'running') {
           $('ai-status').textContent =
-            `Downloading model files: ${(data.loaded / 1048576).toFixed(0)} / ${(data.total / 1048576).toFixed(0)} MB. Chat stays here.`;
-        else if (data.status === 'ready')
-          $('ai-status').textContent = 'Model ready. Creating your summary on this device…';
-        return;
-      }
-      if (data.requestId !== requestId || !digest) return;
-      if (data.type === 'running') {
-        $('ai-status').textContent =
-          `Summarizing on your device${data.sections > 1 ? ` · section ${data.section} of ${data.sections}` : ''}. Larger chats take longer.`;
-        $('ai-progress').removeAttribute('value');
-        return;
-      }
-      if (data.type === 'result') {
-        aiBusy = false;
-        aiSummary = data.text;
-        $('summary-mode').textContent = 'Local AI · verify';
-        $('ai-status').textContent =
-          `Processed ${activeAIInput.selectedCount} of ${activeAIInput.totalCount} messages with FLAN-T5 Small${activeAIInput.selectedCount < activeAIInput.totalCount ? ' · long-chat limit: important messages prioritized' : ''}. The model may miss details; source-backed key facts remain above.`;
-        $('ai-button').disabled = false;
-        $('ai-button').textContent = 'Summarize again';
-        $('ai-progress').hidden = true;
-        renderSummary();
-        toast('Local AI overview ready. Please verify the source facts.');
-      }
-      if (data.type === 'quality-failure') {
-        aiBusy = false;
-        aiSummary = '';
-        $('summary-mode').textContent = 'Source-backed';
-        $('ai-status').textContent =
-          'The model did not produce a usable overview. Your source-backed brief is ready above.';
-        $('ai-button').disabled = false;
-        $('ai-button').textContent = 'Retry local AI';
-        $('ai-progress').hidden = true;
-        renderSummary();
-        toast('Kept your source-backed brief. Unusable AI output was hidden.');
-      }
-      if (data.type === 'error') aiFailed(data.message);
-    };
-    worker.onerror = (event) => {
-      aiFailed(event.message);
-      worker?.terminate();
-      worker = null;
-    };
+            `Summarizing on your device${data.sections > 1 ? ` · section ${data.section} of ${data.sections}` : ''}. Larger chats take longer.`;
+          $('ai-progress').removeAttribute('value');
+          return;
+        }
+        if (data.type === 'result') {
+          aiBusy = false;
+          aiSummary = data.text;
+          $('summary-mode').textContent = 'Local AI · verify';
+          $('ai-status').textContent =
+            `Processed ${activeAIInput.selectedCount} of ${activeAIInput.totalCount} messages with FLAN-T5 Small${activeAIInput.selectedCount < activeAIInput.totalCount ? ' · long-chat limit: important messages prioritized' : ''}. The model may miss details; source-backed key facts remain above.`;
+          $('ai-button').disabled = false;
+          $('ai-button').textContent = 'Summarize again';
+          $('ai-progress').hidden = true;
+          renderSummary();
+          toast('Local AI overview ready. Please verify the source facts.');
+        }
+        if (data.type === 'quality-failure') {
+          aiBusy = false;
+          aiSummary = '';
+          $('summary-mode').textContent = 'Source-backed';
+          $('ai-status').textContent =
+            'The model did not produce a usable overview. Your source-backed brief is ready above.';
+          $('ai-button').disabled = false;
+          $('ai-button').textContent = 'Retry local AI';
+          $('ai-progress').hidden = true;
+          renderSummary();
+          toast('Kept your source-backed brief. Unusable AI output was hidden.');
+        }
+        if (data.type === 'error') aiFailed(data.message);
+      };
+      worker.onerror = (event) => {
+        aiFailed(event.message);
+        worker?.terminate();
+        worker = null;
+      };
+    }
+    worker.postMessage({ text: activeAIInput.text, chunks: activeAIInput.chunks, requestId: id });
+  } catch (error) {
+    aiFailed(error.message);
   }
-  worker.postMessage({ text: activeAIInput.text, chunks: activeAIInput.chunks, requestId: id });
 }
 function aiFailed(message) {
   aiBusy = false;
+  aiSummary = '';
+  $('summary-mode').textContent = 'Source-backed';
   worker?.terminate();
   worker = null;
   $('ai-status').textContent =
@@ -513,6 +533,7 @@ function aiFailed(message) {
   $('ai-button').disabled = false;
   $('ai-button').textContent = 'Retry local AI';
   $('ai-progress').hidden = true;
+  if (digest) renderSummary();
   console.warn('Local AI could not run:', message);
 }
 $('analyze-button').addEventListener('click', analyze);
@@ -538,8 +559,11 @@ $('unread-from').addEventListener('input', invalidate);
 $('demo-button').addEventListener('click', () => {
   invalidate();
   if (!$('your-name').value.trim()) $('your-name').value = 'Adyan';
-  $('chat-input').value = SAMPLE_CHAT.replaceAll('@Adyan', `@${$('your-name').value.trim()}`);
+  $('chat-input').value = SAMPLE_CHAT.replaceAll('@Adyan', () => `@${$('your-name').value.trim()}`);
   $('unread-from').value = '1';
+  $('date-format').value = 'day-first';
+  completed = new Set();
+  completionChat = '';
   updateCount();
   personalize();
   analyze();
@@ -562,7 +586,10 @@ $('chat-file').addEventListener('change', async (event) => {
     invalidate();
     $('chat-input').value = text;
     $('unread-from').value = '1';
+    completed = new Set();
+    completionChat = '';
     updateCount();
+    persist();
     $('input-error').hidden = true;
     toast('Chat file read locally. Select Catch me up.');
   } catch (error) {
@@ -595,9 +622,11 @@ $('export-button').addEventListener('click', () => {
   const link = el('a');
   link.href = url;
   link.download = 'catchup-brief.md';
+  document.body.append(link);
   link.click();
+  link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  toast('Your brief was saved to this device.');
+  toast('Brief download requested. Check your downloads.');
 });
 $('privacy-button').addEventListener('click', () => $('privacy-dialog').showModal());
 $('close-privacy').addEventListener('click', () => $('privacy-dialog').close());
@@ -650,7 +679,7 @@ try {
     $('chat-input').value = saved.chat;
     $('your-name').value = String(saved.name || '').slice(0, 80);
     $('unread-from').value = String(Number(saved.from) || 1);
-    if (saved.asOf && !Number.isNaN(new Date(saved.asOf).getTime())) $('as-of').value = saved.asOf;
+    // Recalculate deadline status against today's device clock after restoring a chat.
     if (['day-first', 'month-first'].includes(saved.dateFormat))
       $('date-format').value = saved.dateFormat;
     completed = new Set(
